@@ -43,12 +43,6 @@
                         android:id="@+id/action_new_trojan"
                         android:title="@string/action_trojan" />
                     <item
-                        android:id="@+id/action_new_trojan_go"
-                        android:title="@string/action_trojan_go" />
-                    <item
-                        android:id="@+id/action_new_mieru"
-                        android:title="@string/action_mieru" />
-                    <item
                         android:id="@+id/action_new_naive"
                         android:title="@string/action_naive" />
                     <item
@@ -57,6 +51,15 @@
                     <item
                         android:id="@+id/action_new_tuic"
                         android:title="@string/action_tuic" />
+                    <item
+                        android:id="@+id/action_new_snell"
+                        android:title="@string/action_snell" />
+                    <item
+                        android:id="@+id/action_new_openvpn"
+                        android:title="@string/action_openvpn" />
+                    <item
+                        android:id="@+id/action_new_openconnect"
+                        android:title="@string/action_openconnect" />
                     <item
                         android:id="@+id/action_new_shadowtls"
                         android:title="@string/action_shadowtls" />

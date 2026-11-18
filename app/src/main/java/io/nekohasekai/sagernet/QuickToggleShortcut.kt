@@ -37,6 +37,7 @@ import io.nekohasekai.sagernet.database.DataStore
 @Suppress("DEPRECATION")
 class QuickToggleShortcut : Activity(), SagerConnection.Callback {
     private val connection = SagerConnection(SagerConnection.CONNECTION_ID_SHORTCUT)
+    private val toggleGuard = QuickToggleGuard()
     private var profileId = -1L
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +62,13 @@ class QuickToggleShortcut : Activity(), SagerConnection.Callback {
     }
 
     override fun onServiceConnected(service: ISagerNetService) {
+        // One-shot: the BIND_AUTO_CREATE binding can recreate the service
+        // after we stop it and deliver this callback a second time; without
+        // the guard that callback would see Stopped and start the VPN again.
+        if (!toggleGuard.tryHandle()) {
+            finish()
+            return
+        }
         val state = BaseService.State.values()[service.state]
         when {
             state.canStop -> {

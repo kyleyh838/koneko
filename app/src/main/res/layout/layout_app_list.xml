@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/nkb_page"
     android:duplicateParentState="false"
     android:orientation="vertical">
 
@@ -11,7 +12,9 @@
         android:id="@+id/appbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary">
+        android:background="@color/nkb_page"
+        android:stateListAnimator="@null"
+        app:elevation="0dp">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
@@ -23,9 +26,8 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                android:elevation="4dp"
-                android:theme="?actionBarTheme"
+                android:background="@color/nkb_page"
+                android:elevation="0dp"
                 android:touchscreenBlocksFocus="false"
                 app:layout_collapseMode="pin"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.DayNight"

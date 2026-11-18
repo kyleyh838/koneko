@@ -18,3 +18,9 @@ jniLibs/
 
 # submodules
 /external
+
+.kotlin
+.superpowers
+release.keystore
+release.keystore.upstream.bak
+libcore/gomobile

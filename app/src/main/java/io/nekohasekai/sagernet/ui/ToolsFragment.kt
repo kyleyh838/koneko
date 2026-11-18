@@ -7,6 +7,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayoutMediator
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.databinding.LayoutToolsBinding
+import io.nekohasekai.sagernet.ktx.applyTabPressScale
 
 class ToolsFragment : ToolbarFragment(R.layout.layout_tools) {
 
@@ -26,6 +27,7 @@ class ToolsFragment : ToolbarFragment(R.layout.layout_tools) {
             tab.view.setOnLongClickListener { // clear toast
                 true
             }
+            tab.view.applyTabPressScale()
         }.attach()
     }
 

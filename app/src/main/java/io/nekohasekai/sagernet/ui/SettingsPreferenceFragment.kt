@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
-import androidx.core.app.ActivityCompat
 import androidx.preference.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.nekohasekai.sagernet.Key
@@ -29,6 +28,12 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         super.onViewCreated(view, savedInstanceState)
 
         listView.layoutManager = FixedLinearLayoutManager(listView)
+        // FlClash-style grouped cards: one rounded card per PreferenceCategory.
+        setDivider(null)
+        listView.addItemDecoration(PreferenceCardDecoration(requireContext()))
+        // Floating Dock: let the list scroll under the Dock.
+        listView.clipToPadding = false
+        listView.setPadding(0, 0, 0, dp2px(88))
     }
 
     private val reloadListener = Preference.OnPreferenceChangeListener { _, _ ->
@@ -41,24 +46,26 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         DataStore.initGlobal()
         addPreferencesFromResource(R.xml.global_preferences)
 
-        val appTheme = findPreference<ColorPickerPreference>(Key.APP_THEME)!!
-        appTheme.setOnPreferenceChangeListener { _, newTheme ->
-            if (DataStore.serviceState.started) {
-                SagerNet.reloadService()
-            }
-            val theme = Theme.getTheme(newTheme as Int)
-            app.setTheme(theme)
-            requireActivity().apply {
-                setTheme(theme)
-                ActivityCompat.recreate(this)
-            }
+        // "More" entries: Traffic / Tools / About live on the Settings page now
+        // that the navigation drawer is gone (Task 6)
+        val moreTraffic = findPreference<Preference>("moreTraffic")
+        moreTraffic?.isVisible = DataStore.enableClashAPI
+        moreTraffic?.setOnPreferenceClickListener {
+            (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_traffic)
+            true
+        }
+        findPreference<Preference>("moreLogcat")?.setOnPreferenceClickListener {
+            (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_logcat)
+            true
+        }
+        findPreference<Preference>("moreAbout")?.setOnPreferenceClickListener {
+            (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_about)
             true
         }
 
-        val nightTheme = findPreference<SimpleMenuPreference>(Key.NIGHT_THEME)!!
-        nightTheme.setOnPreferenceChangeListener { _, newTheme ->
-            Theme.currentNightMode = (newTheme as String).toInt()
-            Theme.applyNightTheme()
+        val darkMode = findPreference<SwitchPreference>(Key.DARK_MODE)!!
+        darkMode.setOnPreferenceChangeListener { _, newValue ->
+            Theme.applyNightTheme(newValue as Boolean)
             true
         }
         val mixedPort = findPreference<EditTextPreference>(Key.MIXED_PORT)!!
@@ -143,7 +150,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         val acquireWakeLock = findPreference<SwitchPreference>(Key.ACQUIRE_WAKE_LOCK)!!
         val enableClashAPI = findPreference<SwitchPreference>(Key.ENABLE_CLASH_API)!!
         enableClashAPI.setOnPreferenceChangeListener { _, newValue ->
-            (activity as MainActivity?)?.refreshNavMenu(newValue as Boolean)
+            moreTraffic?.isVisible = newValue as Boolean
             needReload()
             true
         }

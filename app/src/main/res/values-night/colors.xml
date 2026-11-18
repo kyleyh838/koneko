@@ -2,4 +2,16 @@
 <resources>
     <color name="fab_color_progress">@color/material_light_white</color>
     <color name="preference_simple_menu_background">#303030</color>
+
+    <!-- KoNeko FlClash-style design tokens (dark values) -->
+    <color name="nkb_page">#0D1015</color>
+    <color name="nkb_card">#1A1E25</color>
+    <color name="nkb_card_stroke">#262C38</color>
+    <color name="nkb_accent">#369AC3</color>
+    <color name="nkb_text_hint">#8A94A6</color>
+    <color name="nkb_dock_bg">#CC1A1E25</color>
+    <color name="nkb_accent_soft">#2E369AC3</color>
+    <color name="nkb_divider">#232833</color>
+    <color name="nkb_circle_checked">#369AC3</color>
+    <color name="nkb_circle_ring">#8A94A6</color>
 </resources>

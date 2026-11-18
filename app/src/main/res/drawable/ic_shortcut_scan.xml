@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press shortcut icon, same style as the FlClash-style ones: theme-accent disc, white QR glyph (three finder squares + data dots). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/nkb_accent"
+        android:pathData="M24,2 A22,22 0 1 1 24,46 A22,22 0 1 1 24,2 Z" />
+    <group
+        android:scaleX="1.35"
+        android:scaleY="1.35"
+        android:translateX="7.8"
+        android:translateY="7.8">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M4,4 h6.5 v6.5 h-6.5 Z" />
+        <path
+            android:fillColor="@color/nkb_accent"
+            android:pathData="M6.25,6.25 h2 v2 h-2 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M13.5,4 h6.5 v6.5 h-6.5 Z" />
+        <path
+            android:fillColor="@color/nkb_accent"
+            android:pathData="M15.75,6.25 h2 v2 h-2 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M4,13.5 h6.5 v6.5 h-6.5 Z" />
+        <path
+            android:fillColor="@color/nkb_accent"
+            android:pathData="M6.25,15.75 h2 v2 h-2 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M14,14 h2.5 v2.5 h-2.5 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M17.5,14 h2.5 v2.5 h-2.5 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M14,17.5 h2.5 v2.5 h-2.5 Z" />
+    </group>
+</vector>

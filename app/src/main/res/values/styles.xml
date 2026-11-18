@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dock 文字：11sp（默认 Caption 为 12sp），配合 20dp 图标在 56dp 栏高内拉开图标与文字的间距 -->
+    <style name="NkbDockLabel" parent="TextAppearance.AppCompat.Caption">
+        <item name="android:textSize">11sp</item>
+    </style>
+</resources>

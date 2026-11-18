@@ -1,0 +1,13 @@
+diff --git a/box.go b/box.go
+index 3654fb65d..cd338722d 100644
+--- a/box.go
++++ b/box.go
+@@ -151,7 +151,7 @@ func New(options Options) (*Box, error) {
+ 	var needCacheFile bool
+ 	var needClashAPI bool
+ 	var needV2RayAPI bool
+-	if experimentalOptions.CacheFile != nil && experimentalOptions.CacheFile.Enabled || options.PlatformLogWriter != nil {
++	if experimentalOptions.CacheFile != nil && experimentalOptions.CacheFile.Enabled {
+ 		needCacheFile = true
+ 	}
+ 	if experimentalOptions.ClashAPI != nil {

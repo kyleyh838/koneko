@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Section title above a settings card (FlClash-style grouped card). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="36dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="6dp"
+    android:textColor="@color/nkb_text_hint"
+    android:textSize="12sp" />

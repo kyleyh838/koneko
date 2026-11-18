@@ -3,6 +3,7 @@ package io.nekohasekai.sagernet.fmt.naive
 import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.fmt.LOCALHOST
 import io.nekohasekai.sagernet.ktx.*
+import moe.matsuri.nb4a.SingBoxOptions
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
 
@@ -52,6 +53,56 @@ fun NaiveBean.toUri(proxyOnly: Boolean = false): String {
         }
     }
     return builder.toLink(if (proxyOnly) proto else "naive+$proto", false)
+}
+
+fun buildSingBoxOutboundNaiveBean(bean: NaiveBean): SingBoxOptions.Outbound_NaiveOptions {
+    // sing-box 1.14 ships NaiveProxy in the core: no external binary needed.
+    // The bean's proto is https or quic; the outbound takes a quic boolean
+    // and a TLS object instead.
+    return SingBoxOptions.Outbound_NaiveOptions().apply {
+        type = "naive"
+        // Naive hardcodes RemoteIsDomain=true and NewDialer=true
+        // (protocol/naive/outbound.go). With 2+ DNS servers in the config
+        // and no resolver, the core refuses to build its dialer: "missing
+        // domain resolver for domain server address". Name dns-direct
+        // (always present in the generated config) as the resolver; for IP
+        // servers it is never consulted, for domain servers it resolves
+        // via the direct DNS. Same _hack_config_map mechanism the app
+        // already uses for flat DialerOptions fields.
+        _hack_config_map["domain_resolver"] = "dns-direct"
+        server = bean.serverAddress
+        server_port = bean.serverPort
+        username = bean.username
+        password = bean.password
+        if (bean.insecureConcurrency > 0) insecure_concurrency = bean.insecureConcurrency
+        if (bean.extraHeaders.isNotBlank()) extra_headers = parseExtraHeaders(bean.extraHeaders)
+        quic = bean.proto == "quic"
+        if (bean.proto != "http") {
+            tls = SingBoxOptions.OutboundTLSOptions().apply {
+                enabled = true
+                insecure = DataStore.globalAllowInsecure
+                if (bean.sni.isNotBlank()) server_name = bean.sni
+                if (bean.certificates.isNotBlank()) certificate = bean.certificates
+            }
+        }
+    }
+}
+
+private fun parseExtraHeaders(raw: String): Map<String, List<String>> {
+    // Stored as "Name: value" lines (see parseNaive); the core wants a
+    // header name -> values map.
+    val map = LinkedHashMap<String, MutableList<String>>()
+    raw.split("\n").forEach { line ->
+        val idx = line.indexOf(':')
+        if (idx > 0) {
+            val name = line.substring(0, idx).trim()
+            val value = line.substring(idx + 1).trim()
+            if (name.isNotEmpty() && value.isNotEmpty()) {
+                map.getOrPut(name) { mutableListOf() }.add(value)
+            }
+        }
+    }
+    return map
 }
 
 fun NaiveBean.buildNaiveConfig(port: Int): String {

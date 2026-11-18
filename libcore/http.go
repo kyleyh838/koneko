@@ -338,6 +338,12 @@ func (r *httpRequest) doH3Direct() (HTTPResponse, error) {
 	case result := <-successCh:
 		return &httpResponse{Response: result}, nil
 	case <-ctx.Done():
+		// Never return (nil, nil): the caller (RawUpdater) takes a null
+		// response with no error and NPEs on response.contentString.
+		// All attempts hanging until the timeout leaves finalErr unset.
+		if finalErr == nil {
+			finalErr = ctx.Err()
+		}
 		return nil, finalErr
 	}
 }

@@ -11,8 +11,6 @@ import io.nekohasekai.sagernet.fmt.http.HttpBean
 import io.nekohasekai.sagernet.fmt.http.toUri
 import io.nekohasekai.sagernet.fmt.hysteria.*
 import io.nekohasekai.sagernet.fmt.internal.ChainBean
-import io.nekohasekai.sagernet.fmt.mieru.MieruBean
-import io.nekohasekai.sagernet.fmt.mieru.buildMieruConfig
 import io.nekohasekai.sagernet.fmt.naive.NaiveBean
 import io.nekohasekai.sagernet.fmt.naive.buildNaiveConfig
 import io.nekohasekai.sagernet.fmt.naive.toUri
@@ -22,11 +20,14 @@ import io.nekohasekai.sagernet.fmt.socks.SOCKSBean
 import io.nekohasekai.sagernet.fmt.socks.toUri
 import io.nekohasekai.sagernet.fmt.ssh.SSHBean
 import io.nekohasekai.sagernet.fmt.trojan.TrojanBean
-import io.nekohasekai.sagernet.fmt.trojan_go.TrojanGoBean
-import io.nekohasekai.sagernet.fmt.trojan_go.buildTrojanGoConfig
-import io.nekohasekai.sagernet.fmt.trojan_go.toUri
 import io.nekohasekai.sagernet.fmt.tuic.TuicBean
 import io.nekohasekai.sagernet.fmt.tuic.toUri
+import io.nekohasekai.sagernet.fmt.snell.SnellBean
+import io.nekohasekai.sagernet.fmt.snell.toUri
+import io.nekohasekai.sagernet.fmt.openvpn.OpenVPNBean
+import io.nekohasekai.sagernet.fmt.openvpn.toUri
+import io.nekohasekai.sagernet.fmt.openconnect.OpenConnectBean
+import io.nekohasekai.sagernet.fmt.openconnect.toUri
 import io.nekohasekai.sagernet.fmt.v2ray.*
 import io.nekohasekai.sagernet.fmt.wireguard.WireGuardBean
 import io.nekohasekai.sagernet.ktx.app
@@ -59,11 +60,12 @@ data class ProxyEntity(
     var ssBean: ShadowsocksBean? = null,
     var vmessBean: VMessBean? = null,
     var trojanBean: TrojanBean? = null,
-    var trojanGoBean: TrojanGoBean? = null,
-    var mieruBean: MieruBean? = null,
     var naiveBean: NaiveBean? = null,
     var hysteriaBean: HysteriaBean? = null,
     var tuicBean: TuicBean? = null,
+    var snellBean: SnellBean? = null,
+    var openVPNBean: OpenVPNBean? = null,
+    var openConnectBean: OpenConnectBean? = null,
     var sshBean: SSHBean? = null,
     var wgBean: WireGuardBean? = null,
     var shadowTLSBean: ShadowTLSBean? = null,
@@ -83,13 +85,14 @@ data class ProxyEntity(
         const val TYPE_SSH = 17
         const val TYPE_WG = 18
 
-        const val TYPE_TROJAN_GO = 7
         const val TYPE_NAIVE = 9
         const val TYPE_HYSTERIA = 15
         const val TYPE_SHADOWTLS = 19
         const val TYPE_TUIC = 20
-        const val TYPE_MIERU = 21
         const val TYPE_ANYTLS = 22
+        const val TYPE_SNELL = 23
+        const val TYPE_OPENVPN = 24
+        const val TYPE_OPENCONNECT = 25
 
         const val TYPE_CONFIG = 998
         const val TYPE_NEKO = 999
@@ -165,13 +168,14 @@ data class ProxyEntity(
             TYPE_SS -> ssBean = KryoConverters.shadowsocksDeserialize(byteArray)
             TYPE_VMESS -> vmessBean = KryoConverters.vmessDeserialize(byteArray)
             TYPE_TROJAN -> trojanBean = KryoConverters.trojanDeserialize(byteArray)
-            TYPE_TROJAN_GO -> trojanGoBean = KryoConverters.trojanGoDeserialize(byteArray)
-            TYPE_MIERU -> mieruBean = KryoConverters.mieruDeserialize(byteArray)
             TYPE_NAIVE -> naiveBean = KryoConverters.naiveDeserialize(byteArray)
             TYPE_HYSTERIA -> hysteriaBean = KryoConverters.hysteriaDeserialize(byteArray)
             TYPE_SSH -> sshBean = KryoConverters.sshDeserialize(byteArray)
             TYPE_WG -> wgBean = KryoConverters.wireguardDeserialize(byteArray)
             TYPE_TUIC -> tuicBean = KryoConverters.tuicDeserialize(byteArray)
+            TYPE_SNELL -> snellBean = KryoConverters.snellDeserialize(byteArray)
+            TYPE_OPENVPN -> openVPNBean = KryoConverters.openVPNDeserialize(byteArray)
+            TYPE_OPENCONNECT -> openConnectBean = KryoConverters.openConnectDeserialize(byteArray)
             TYPE_SHADOWTLS -> shadowTLSBean = KryoConverters.shadowTLSDeserialize(byteArray)
             TYPE_ANYTLS -> anyTLSBean = KryoConverters.anyTLSDeserialize(byteArray)
             TYPE_CHAIN -> chainBean = KryoConverters.chainDeserialize(byteArray)
@@ -186,13 +190,14 @@ data class ProxyEntity(
         TYPE_SS -> "Shadowsocks"
         TYPE_VMESS -> if (vmessBean!!.isVLESS) "VLESS" else "VMess"
         TYPE_TROJAN -> "Trojan"
-        TYPE_TROJAN_GO -> "Trojan-Go"
-        TYPE_MIERU -> "Mieru"
         TYPE_NAIVE -> "Naïve"
         TYPE_HYSTERIA -> "Hysteria" + hysteriaBean!!.protocolVersion
         TYPE_SSH -> "SSH"
         TYPE_WG -> "WireGuard"
         TYPE_TUIC -> "TUIC"
+        TYPE_SNELL -> "Snell"
+        TYPE_OPENVPN -> "OpenVPN"
+        TYPE_OPENCONNECT -> "OpenConnect"
         TYPE_SHADOWTLS -> "ShadowTLS"
         TYPE_ANYTLS -> "AnyTLS"
         TYPE_CHAIN -> chainName
@@ -211,13 +216,14 @@ data class ProxyEntity(
             TYPE_SS -> ssBean
             TYPE_VMESS -> vmessBean
             TYPE_TROJAN -> trojanBean
-            TYPE_TROJAN_GO -> trojanGoBean
-            TYPE_MIERU -> mieruBean
             TYPE_NAIVE -> naiveBean
             TYPE_HYSTERIA -> hysteriaBean
             TYPE_SSH -> sshBean
             TYPE_WG -> wgBean
             TYPE_TUIC -> tuicBean
+            TYPE_SNELL -> snellBean
+            TYPE_OPENVPN -> openVPNBean
+            TYPE_OPENCONNECT -> openConnectBean
             TYPE_SHADOWTLS -> shadowTLSBean
             TYPE_ANYTLS -> anyTLSBean
             TYPE_CHAIN -> chainBean
@@ -252,10 +258,12 @@ data class ProxyEntity(
             is ShadowsocksBean -> toUri()
             is VMessBean -> toUriVMessVLESSTrojan(false)
             is TrojanBean -> toUriVMessVLESSTrojan(true)
-            is TrojanGoBean -> toUri()
             is NaiveBean -> toUri()
             is HysteriaBean -> toUri()
             is TuicBean -> toUri()
+            is SnellBean -> toUri()
+            is OpenVPNBean -> toUri()
+            is OpenConnectBean -> toUri()
             is AnyTLSBean -> toUri()
             is NekoBean -> ""
             else -> toUniversalLink()
@@ -277,16 +285,6 @@ data class ProxyEntity(
                 for ((chain) in config.externalIndex) {
                     chain.entries.forEachIndexed { index, (port, profile) ->
                         when (val bean = profile.requireBean()) {
-                            is TrojanGoBean -> {
-                                append("\n\n")
-                                append(bean.buildTrojanGoConfig(port))
-                            }
-
-                            is MieruBean -> {
-                                append("\n\n")
-                                append(bean.buildMieruConfig(port))
-                            }
-
                             is NaiveBean -> {
                                 append("\n\n")
                                 append(bean.buildNaiveConfig(port))
@@ -305,9 +303,8 @@ data class ProxyEntity(
 
     fun needExternal(): Boolean {
         return when (type) {
-            TYPE_TROJAN_GO -> true
-            TYPE_MIERU -> true
-            TYPE_NAIVE -> true
+            // TYPE_NAIVE used to be external (naive-plugin binary); sing-box
+            // 1.14 ships NaiveProxy in the core, so it builds natively now.
             TYPE_HYSTERIA -> !hysteriaBean!!.canUseSingBox()
             TYPE_NEKO -> true
             else -> false
@@ -338,6 +335,10 @@ data class ProxyEntity(
                 }
             }
 
+            TYPE_SS -> MultiplexOptions().apply {
+                enabled = ssBean!!.enableMux
+            }
+
             else -> null
         }
     }
@@ -348,13 +349,14 @@ data class ProxyEntity(
         ssBean = null
         vmessBean = null
         trojanBean = null
-        trojanGoBean = null
-        mieruBean = null
         naiveBean = null
         hysteriaBean = null
         sshBean = null
         wgBean = null
         tuicBean = null
+        snellBean = null
+        openVPNBean = null
+        openConnectBean = null
         shadowTLSBean = null
         anyTLSBean = null
         chainBean = null
@@ -387,16 +389,6 @@ data class ProxyEntity(
                 trojanBean = bean
             }
 
-            is TrojanGoBean -> {
-                type = TYPE_TROJAN_GO
-                trojanGoBean = bean
-            }
-
-            is MieruBean -> {
-                type = TYPE_MIERU
-                mieruBean = bean
-            }
-
             is NaiveBean -> {
                 type = TYPE_NAIVE
                 naiveBean = bean
@@ -420,6 +412,21 @@ data class ProxyEntity(
             is TuicBean -> {
                 type = TYPE_TUIC
                 tuicBean = bean
+            }
+
+            is SnellBean -> {
+                type = TYPE_SNELL
+                snellBean = bean
+            }
+
+            is OpenVPNBean -> {
+                type = TYPE_OPENVPN
+                openVPNBean = bean
+            }
+
+            is OpenConnectBean -> {
+                type = TYPE_OPENCONNECT
+                openConnectBean = bean
             }
 
             is ShadowTLSBean -> {
@@ -460,13 +467,14 @@ data class ProxyEntity(
                 TYPE_SS -> ShadowsocksSettingsActivity::class.java
                 TYPE_VMESS -> VMessSettingsActivity::class.java
                 TYPE_TROJAN -> TrojanSettingsActivity::class.java
-                TYPE_TROJAN_GO -> TrojanGoSettingsActivity::class.java
-                TYPE_MIERU -> MieruSettingsActivity::class.java
                 TYPE_NAIVE -> NaiveSettingsActivity::class.java
                 TYPE_HYSTERIA -> HysteriaSettingsActivity::class.java
                 TYPE_SSH -> SSHSettingsActivity::class.java
                 TYPE_WG -> WireGuardSettingsActivity::class.java
                 TYPE_TUIC -> TuicSettingsActivity::class.java
+                TYPE_SNELL -> SnellSettingsActivity::class.java
+                TYPE_OPENVPN -> OpenVPNSettingsActivity::class.java
+                TYPE_OPENCONNECT -> OpenConnectSettingsActivity::class.java
                 TYPE_SHADOWTLS -> ShadowTLSSettingsActivity::class.java
                 TYPE_ANYTLS -> AnyTLSSettingsActivity::class.java
                 TYPE_CHAIN -> ChainSettingsActivity::class.java

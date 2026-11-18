@@ -86,7 +86,6 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     var appTLSVersion by configurationStore.string(Key.APP_TLS_VERSION)
     var enableClashAPI by configurationStore.boolean(Key.ENABLE_CLASH_API)
-    var showBottomBar by configurationStore.boolean(Key.SHOW_BOTTOM_BAR)
 
     var allowInsecureOnRequest by configurationStore.boolean(Key.ALLOW_INSECURE_ON_REQUEST)
     var networkChangeResetConnections by configurationStore.boolean(Key.NETWORK_CHANGE_RESET_CONNECTIONS) { true }
@@ -95,8 +94,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     //
 
     var isExpert by configurationStore.boolean(Key.APP_EXPERT)
-    var appTheme by configurationStore.int(Key.APP_THEME)
-    var nightTheme by configurationStore.stringToInt(Key.NIGHT_THEME)
+    var darkMode by configurationStore.boolean(Key.DARK_MODE)
     var serviceMode by configurationStore.string(Key.SERVICE_MODE) { Key.MODE_VPN }
 
     var trafficSniffing by configurationStore.stringToInt(Key.TRAFFIC_SNIFFING) { 1 }
@@ -150,6 +148,10 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var proxyApps by configurationStore.boolean(Key.PROXY_APPS)
     var bypass by configurationStore.boolean(Key.BYPASS_MODE) { true }
     var individual by configurationStore.string(Key.INDIVIDUAL)
+    var appBlock by configurationStore.boolean(Key.APP_BLOCK)
+    var individualBlock by configurationStore.string(Key.INDIVIDUAL_BLOCK)
+    var ssDefaultUoT by configurationStore.boolean(Key.SS_DEFAULT_UOT)
+    var urlTestTimeout by configurationStore.int(Key.URL_TEST_TIMEOUT) { 5000 }
     var showDirectSpeed by configurationStore.boolean(Key.SHOW_DIRECT_SPEED) { true }
 
     val persistAcrossReboot by configurationStore.boolean(Key.PERSIST_ACROSS_REBOOT) { false }
@@ -216,6 +218,39 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var serverCongestionController by profileCacheStore.string(Key.SERVER_CONGESTION_CONTROLLER)
     var serverDisableSNI by profileCacheStore.boolean(Key.SERVER_DISABLE_SNI)
     var serverReduceRTT by profileCacheStore.boolean(Key.SERVER_REDUCE_RTT)
+
+    var serverSnellVersion by profileCacheStore.stringToInt(Key.SERVER_SNELL_VERSION) { 4 }
+    var serverSnellMode by profileCacheStore.string(Key.SERVER_SNELL_MODE)
+    var serverSnellReuse by profileCacheStore.boolean(Key.SERVER_SNELL_REUSE)
+
+    var serverOpenVPNMode by profileCacheStore.string(Key.SERVER_OPENVPN_MODE)
+    var serverOpenVPNAuth by profileCacheStore.string(Key.SERVER_OPENVPN_AUTH)
+    var serverOpenVPNAddress by profileCacheStore.string(Key.SERVER_OPENVPN_ADDRESS)
+    var serverOpenVPNDataCiphers by profileCacheStore.string(Key.SERVER_OPENVPN_DATA_CIPHERS)
+    var serverOpenVPNClientCert by profileCacheStore.string(Key.SERVER_OPENVPN_CLIENT_CERT)
+    var serverOpenVPNClientKey by profileCacheStore.string(Key.SERVER_OPENVPN_CLIENT_KEY)
+    var serverOpenVPNPeerFingerprint by profileCacheStore.string(Key.SERVER_OPENVPN_PEER_FINGERPRINT)
+    var serverOpenVPNControlWrapType by profileCacheStore.string(Key.SERVER_OPENVPN_CONTROL_WRAP_TYPE)
+    var serverOpenVPNControlWrapKey by profileCacheStore.string(Key.SERVER_OPENVPN_CONTROL_WRAP_KEY)
+    var serverOpenVPNControlWrapDirection by profileCacheStore.string(Key.SERVER_OPENVPN_CONTROL_WRAP_DIRECTION)
+    var serverOpenVPNStaticKey by profileCacheStore.string(Key.SERVER_OPENVPN_STATIC_KEY)
+    var serverOpenVPNKeyDirection by profileCacheStore.string(Key.SERVER_OPENVPN_KEY_DIRECTION)
+    var serverOpenVPNRemoteRandom by profileCacheStore.boolean(Key.SERVER_OPENVPN_REMOTE_RANDOM)
+    var serverOpenVPNRouteNoPull by profileCacheStore.boolean(Key.SERVER_OPENVPN_ROUTE_NO_PULL)
+    var serverOpenVPNRedirectGateway by profileCacheStore.boolean(Key.SERVER_OPENVPN_REDIRECT_GATEWAY)
+
+    var serverOpenConnectFlavor by profileCacheStore.string(Key.SERVER_OPENCONNECT_FLAVOR)
+    var serverOpenConnectAuthGroup by profileCacheStore.string(Key.SERVER_OPENCONNECT_AUTH_GROUP)
+    var serverOpenConnectCookie by profileCacheStore.string(Key.SERVER_OPENCONNECT_COOKIE)
+    var serverOpenConnectTokenMode by profileCacheStore.string(Key.SERVER_OPENCONNECT_TOKEN_MODE)
+    var serverOpenConnectTokenSecret by profileCacheStore.string(Key.SERVER_OPENCONNECT_TOKEN_SECRET)
+    var serverOpenConnectTokenPin by profileCacheStore.string(Key.SERVER_OPENCONNECT_TOKEN_PIN)
+    var serverOpenConnectReportedOS by profileCacheStore.string(Key.SERVER_OPENCONNECT_REPORTED_OS)
+    var serverOpenConnectUserAgent by profileCacheStore.string(Key.SERVER_OPENCONNECT_USER_AGENT)
+    var serverOpenConnectLocalHostname by profileCacheStore.string(Key.SERVER_OPENCONNECT_LOCAL_HOSTNAME)
+    var serverOpenConnectNoUDP by profileCacheStore.boolean(Key.SERVER_OPENCONNECT_NO_UDP)
+    var serverOpenConnectClientCert by profileCacheStore.string(Key.SERVER_OPENCONNECT_CLIENT_CERT)
+    var serverOpenConnectClientKey by profileCacheStore.string(Key.SERVER_OPENCONNECT_CLIENT_KEY)
 
     var routeName by profileCacheStore.string(Key.ROUTE_NAME)
     var routeDomain by profileCacheStore.string(Key.ROUTE_DOMAIN)

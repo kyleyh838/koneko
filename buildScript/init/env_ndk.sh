@@ -10,7 +10,12 @@ if [ -z "$ANDROID_HOME" ]; then
   fi
 fi
 
-_NDK="$ANDROID_HOME/ndk/25.0.8775105"
+# NDK 28+ is required: the NaiveProxy outbound pulls in Cronet, whose
+# prebuilt lib was compiled with a Clang that emits AArch64 PAC relocations
+# (R_AARCH64_AUTH_ABS64, type 315); LLD only learned AUTH relocations in LLVM 19# (NDK 28), so NDK 25/27 cannot link them.
+_NDK="$ANDROID_HOME/ndk/28.2.13676358"
+[ -f "$_NDK/source.properties" ] || _NDK="$ANDROID_HOME/ndk/27.2.12479018"
+[ -f "$_NDK/source.properties" ] || _NDK="$ANDROID_HOME/ndk/25.0.8775105"
 [ -f "$_NDK/source.properties" ] || _NDK="$ANDROID_NDK_HOME"
 [ -f "$_NDK/source.properties" ] || _NDK="$NDK"
 [ -f "$_NDK/source.properties" ] || _NDK="$ANDROID_HOME/ndk-bundle"

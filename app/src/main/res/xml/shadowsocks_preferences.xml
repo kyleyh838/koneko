@@ -51,6 +51,10 @@
         <SwitchPreference
             app:key="sUoT"
             app:title="UDP over TCP" />
+        <SwitchPreference
+            app:key="enableMux"
+            app:summary="@string/shadowsocks_enable_mux_sum"
+            app:title="@string/shadowsocks_enable_mux" />
     </PreferenceCategory>
 
 </PreferenceScreen>

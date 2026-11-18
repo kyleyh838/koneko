@@ -2,6 +2,7 @@ package io.nekohasekai.sagernet.group
 
 import android.annotation.SuppressLint
 import io.nekohasekai.sagernet.R
+import io.nekohasekai.sagernet.bg.BaseService
 import io.nekohasekai.sagernet.database.*
 import io.nekohasekai.sagernet.fmt.AbstractBean
 import io.nekohasekai.sagernet.fmt.http.HttpBean
@@ -10,8 +11,8 @@ import io.nekohasekai.sagernet.fmt.hysteria.parseHysteria1Json
 import io.nekohasekai.sagernet.fmt.shadowsocks.ShadowsocksBean
 import io.nekohasekai.sagernet.fmt.shadowsocks.parseShadowsocks
 import io.nekohasekai.sagernet.fmt.socks.SOCKSBean
+import io.nekohasekai.sagernet.fmt.snell.SnellBean
 import io.nekohasekai.sagernet.fmt.trojan.TrojanBean
-import io.nekohasekai.sagernet.fmt.trojan_go.parseTrojanGo
 import io.nekohasekai.sagernet.fmt.tuic.TuicBean
 import io.nekohasekai.sagernet.fmt.v2ray.StandardV2RayBean
 import io.nekohasekai.sagernet.fmt.v2ray.VMessBean
@@ -56,19 +57,19 @@ object RawUpdater : GroupUpdater() {
                 ?: error(app.getString(R.string.no_proxies_found_in_subscription))
         } else {
 
-            val response = Libcore.newHttpClient().apply {
-                trySocks5(DataStore.mixedPort)
-                tryH3Direct()
-                when (DataStore.appTLSVersion) {
-                    "1.3" -> restrictedTLS()
-                }
-            }.newRequest().apply {
-                if (DataStore.allowInsecureOnRequest) {
-                    allowInsecure()
-                }
-                setURL(subscription.link)
-                setUserAgent(subscription.customUserAgent.takeIf { it.isNotBlank() } ?: USER_AGENT)
-            }.execute()
+            // Direct first, proxy fallback (#1181): a subscription fetch
+            // must not go through the local mixed inbound, because a
+            // broken current node hangs the request inside the tunnel
+            // (the h1h2 client has no timeout). Only retry via the
+            // proxy when the service is actually connected; otherwise
+            // the proxy path would just run the same direct fetch again.
+            val response = try {
+                executeSubscriptionRequest(subscription, useProxy = false)
+            } catch (e: Exception) {
+                if (DataStore.serviceState != BaseService.State.Connected) throw e
+                Logs.i("subscription direct fetch failed, retrying via proxy: ${e.readableMessage}")
+                executeSubscriptionRequest(subscription, useProxy = true)
+            }
             proxies = parseRaw(Util.getStringBox(response.contentString))
                 ?: error(app.getString(R.string.no_proxies_found))
 
@@ -223,6 +224,27 @@ object RawUpdater : GroupUpdater() {
         )
     }
 
+    // One subscription fetch. Direct by default; via the local mixed
+    // inbound only when the caller explicitly asks for the proxy path.
+    private fun executeSubscriptionRequest(subscription: SubscriptionBean, useProxy: Boolean) =
+        Libcore.newHttpClient().apply {
+            if (useProxy) trySocks5(DataStore.mixedPort)
+            tryH3Direct()
+            when (DataStore.appTLSVersion) {
+                "1.3" -> restrictedTLS()
+            }
+        }.newRequest().apply {
+            if (DataStore.allowInsecureOnRequest) {
+                allowInsecure()
+            }
+            setURL(subscription.link)
+            setUserAgent(subscription.customUserAgent.takeIf { it.isNotBlank() } ?: USER_AGENT)
+        }.execute()
+            // The Go side can return a null response with no error
+            // (doH3Direct timeout with no recorded error); fail with
+            // a clear error instead of NPEing on contentString.
+            ?: error("empty response")
+
     @Suppress("UNCHECKED_CAST")
     suspend fun parseRaw(text: String, fileName: String = ""): List<AbstractBean>? {
 
@@ -301,6 +323,7 @@ object RawUpdater : GroupUpdater() {
                                 method = clashCipher(proxy["cipher"] as String)
                                 plugin = ssPlugin.joinToString(";")
                                 name = proxy["name"]?.toString()
+                                sUoT = DataStore.ssDefaultUoT
                             })
                         }
 
@@ -483,6 +506,9 @@ object RawUpdater : GroupUpdater() {
                                             when (echOpt.key) {
                                                 "enable" -> bean.enableECH =
                                                     echOpt.value.toString() == "true"
+                                                "config" -> bean.echConfig =
+                                                    (echOpt.value as? List<Any>)?.joinToString("\n")
+                                                        ?: echOpt.value?.toString() ?: ""
                                             }
                                         }
                                     }
@@ -654,6 +680,26 @@ object RawUpdater : GroupUpdater() {
                             }
                             proxies.add(bean)
                         }
+
+                        "snell" -> {
+                            val bean = SnellBean()
+                            for (opt in proxy) {
+                                if (opt.value == null) continue
+                                when (opt.key.replace("_", "-")) {
+                                    "name" -> bean.name = opt.value.toString()
+                                    "server" -> bean.serverAddress = opt.value.toString()
+                                    "port" -> bean.serverPort = opt.value.toString().toInt()
+                                    "psk" -> bean.psk = opt.value.toString()
+                                    "version" -> bean.version = opt.value.toString().toIntOrNull() ?: 4
+                                    "obfs-mode" -> bean.obfsMode = opt.value.toString()
+                                    "obfs-host" -> bean.obfsHost = opt.value.toString()
+                                    "userkey" -> bean.userKey = opt.value.toString()
+                                    "reuse" -> bean.reuse = opt.value.toString() == "true"
+                                    "mode" -> bean.v6Mode = opt.value.toString()
+                                }
+                            }
+                            proxies.add(bean)
+                        }
                     }
                 }
 
@@ -742,6 +788,7 @@ object RawUpdater : GroupUpdater() {
             peerBean.serverPort = endpoint.substringAfterLast(":").toIntOrNull() ?: continue
             peerBean.peerPublicKey = peer["PublicKey"] ?: continue
             peerBean.peerPreSharedKey = peer["PresharedKey"]
+            peerBean.persistentKeepalive = peer["PersistentKeepalive"]?.toIntOrNull()
             beans.add(peerBean.applyDefaultValues())
         }
         if (beans.isEmpty()) error("Empty available peer list")
@@ -759,10 +806,6 @@ object RawUpdater : GroupUpdater() {
 
                 json.has("method") -> {
                     return listOf(json.parseShadowsocks())
-                }
-
-                json.has("remote_addr") -> {
-                    return listOf(json.parseTrojanGo())
                 }
 
                 json.has("outbounds") -> {

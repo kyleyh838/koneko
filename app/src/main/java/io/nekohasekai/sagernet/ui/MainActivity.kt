@@ -9,14 +9,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.RemoteException
 import android.view.KeyEvent
-import android.view.MenuItem
 import androidx.activity.addCallback
 import androidx.annotation.IdRes
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceDataStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import io.nekohasekai.sagernet.BuildConfig
 import io.nekohasekai.sagernet.GroupType
@@ -41,7 +39,6 @@ import io.nekohasekai.sagernet.fmt.PluginEntry
 import io.nekohasekai.sagernet.group.GroupInterfaceAdapter
 import io.nekohasekai.sagernet.group.GroupUpdater
 import io.nekohasekai.sagernet.ktx.alert
-import io.nekohasekai.sagernet.ktx.isPlay
 import io.nekohasekai.sagernet.ktx.isPreview
 import io.nekohasekai.sagernet.ktx.launchCustomTab
 import io.nekohasekai.sagernet.ktx.onMainDispatcher
@@ -50,30 +47,38 @@ import io.nekohasekai.sagernet.ktx.readableMessage
 import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
 import moe.matsuri.nb4a.utils.Util
 
+/** Receives service state + speed updates for the dashboard status card (Task 2). */
+interface DashboardStatusDisplay {
+    fun changeState(state: BaseService.State, animate: Boolean)
+    fun updateSpeed(txRate: Long, rxRate: Long)
+}
+
 class MainActivity : ThemedActivity(),
     SagerConnection.Callback,
-    OnPreferenceDataStoreChangeListener,
-    NavigationView.OnNavigationItemSelectedListener {
+    OnPreferenceDataStoreChangeListener {
 
     lateinit var binding: LayoutMainBinding
-    lateinit var navigation: NavigationView
+
+    /** Receives service state + speed updates for the dashboard status card (Task 2). */
+    var statusDisplay: DashboardStatusDisplay? = null
+
+    private var currentFragmentId: Int = R.id.nav_configuration
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("currentFragmentId", currentFragmentId)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = LayoutMainBinding.inflate(layoutInflater)
-        binding.fab.initProgress(binding.fabProgress)
-        if (themeResId !in intArrayOf(
-                R.style.Theme_SagerNet_Black
-            )
-        ) {
-            navigation = binding.navView
-            binding.drawerLayout.removeView(binding.navViewBlack)
-        } else {
-            navigation = binding.navViewBlack
-            binding.drawerLayout.removeView(binding.navView)
+        binding.dock.setOnItemSelectedListener { item ->
+            if (item.itemId == currentFragmentId) true else displayFragmentWithId(item.itemId)
         }
-        navigation.setNavigationItemSelectedListener(this)
+
+        currentFragmentId = savedInstanceState?.getInt("currentFragmentId", R.id.nav_configuration)
+            ?: R.id.nav_configuration
 
         if (savedInstanceState == null) {
             displayFragmentWithId(R.id.nav_configuration)
@@ -86,13 +91,6 @@ class MainActivity : ThemedActivity(),
             }
         }
 
-        binding.fab.setOnClickListener {
-            if (DataStore.serviceState.canStop) SagerNet.stopService() else connect.launch(
-                null
-            )
-        }
-        binding.stats.setOnClickListener { if (DataStore.serviceState.connected) binding.stats.testConnection() }
-
         setContentView(binding.root)
         changeState(BaseService.State.Idle)
         connection.connect(this, this)
@@ -102,8 +100,6 @@ class MainActivity : ThemedActivity(),
         if (intent?.action == Intent.ACTION_VIEW) {
             onNewIntent(intent)
         }
-
-        refreshNavMenu(DataStore.enableClashAPI)
 
         // sdk 33 notification
         if (Build.VERSION.SDK_INT >= 33) {
@@ -126,13 +122,6 @@ class MainActivity : ThemedActivity(),
         }
     }
 
-    fun refreshNavMenu(clashApi: Boolean) {
-        if (::navigation.isInitialized) {
-            navigation.menu.findItem(R.id.nav_traffic)?.isVisible = clashApi
-            navigation.menu.findItem(R.id.nav_tuiguang)?.isVisible = !isPlay
-        }
-    }
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
@@ -152,6 +141,10 @@ class MainActivity : ThemedActivity(),
             error("not started")
         }
         return connection.service!!.urlTest()
+    }
+
+    fun toggleService() {
+        if (DataStore.serviceState.canStop) SagerNet.stopService() else connect.launch(null)
     }
 
     suspend fun importSubscription(uri: Uri) {
@@ -304,28 +297,11 @@ class MainActivity : ThemedActivity(),
             .show()
     }
 
-    override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        if (item.isChecked) binding.drawerLayout.closeDrawers() else {
-            return displayFragmentWithId(item.itemId)
-        }
-        return true
-    }
-
-
     @SuppressLint("CommitTransaction")
     fun displayFragment(fragment: ToolbarFragment) {
-        if (fragment is ConfigurationFragment) {
-            binding.stats.allowShow = true
-            binding.fab.show()
-        } else if (!DataStore.showBottomBar) {
-            binding.stats.allowShow = false
-            binding.stats.performHide()
-            binding.fab.hide()
-        }
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_holder, fragment)
             .commitAllowingStateLoss()
-        binding.drawerLayout.closeDrawers()
     }
 
     fun displayFragmentWithId(@IdRes id: Int): Boolean {
@@ -340,10 +316,6 @@ class MainActivity : ThemedActivity(),
             R.id.nav_traffic -> displayFragment(WebviewFragment())
             R.id.nav_tools -> displayFragment(ToolsFragment())
             R.id.nav_logcat -> displayFragment(LogcatFragment())
-            R.id.nav_faq -> {
-                launchCustomTab("https://matsuridayo.github.io/")
-                return false
-            }
 
             R.id.nav_about -> displayFragment(AboutFragment())
             R.id.nav_tuiguang -> {
@@ -353,7 +325,17 @@ class MainActivity : ThemedActivity(),
 
             else -> return false
         }
-        navigation.menu.findItem(id).isChecked = true
+        currentFragmentId = id
+        if (id in intArrayOf(
+                R.id.nav_configuration,
+                R.id.nav_group,
+                R.id.nav_route,
+                R.id.nav_tools,
+                R.id.nav_settings
+            )
+        ) {
+            if (binding.dock.selectedItemId != id) binding.dock.selectedItemId = id
+        }
         return true
     }
 
@@ -364,17 +346,13 @@ class MainActivity : ThemedActivity(),
     ) {
         DataStore.serviceState = state
 
-        binding.fab.changeState(state, DataStore.serviceState, animate)
-        binding.stats.changeState(state)
+        statusDisplay?.changeState(state, animate)
         if (msg != null) snackbar(getString(R.string.vpn_error, msg)).show()
     }
 
     override fun snackbarInternal(text: CharSequence): Snackbar {
         return Snackbar.make(binding.coordinator, text, Snackbar.LENGTH_LONG).apply {
-            if (binding.fab.isShown) {
-                anchorView = binding.fab
-            }
-            // TODO
+            anchorView = binding.dock
         }
     }
 
@@ -404,7 +382,7 @@ class MainActivity : ThemedActivity(),
     // may NOT called when app is in background
     // ONLY do UI update here, write DB in bg process
     override fun cbSpeedUpdate(stats: SpeedDisplayData) {
-        binding.stats.updateSpeed(stats.txRateProxy, stats.rxRateProxy)
+        statusDisplay?.updateSpeed(stats.txRateProxy, stats.rxRateProxy)
     }
 
     override fun cbTrafficUpdate(data: TrafficData) {
@@ -426,7 +404,7 @@ class MainActivity : ThemedActivity(),
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
         when (key) {
             Key.SERVICE_MODE -> onBinderDied()
-            Key.PROXY_APPS, Key.BYPASS_MODE, Key.INDIVIDUAL -> {
+            Key.PROXY_APPS, Key.BYPASS_MODE, Key.INDIVIDUAL, Key.APP_BLOCK, Key.INDIVIDUAL_BLOCK -> {
                 if (DataStore.serviceState.canStop) {
                     snackbar(getString(R.string.need_reload)).setAction(R.string.apply) {
                         SagerNet.reloadService()
@@ -454,23 +432,7 @@ class MainActivity : ThemedActivity(),
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (super.onKeyDown(keyCode, event)) return true
-                binding.drawerLayout.open()
-                navigation.requestFocus()
-            }
-
-            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (binding.drawerLayout.isOpen) {
-                    binding.drawerLayout.close()
-                    return true
-                }
-            }
-        }
-
         if (super.onKeyDown(keyCode, event)) return true
-        if (binding.drawerLayout.isOpen) return false
 
         val fragment =
             supportFragmentManager.findFragmentById(R.id.fragment_holder) as? ToolbarFragment

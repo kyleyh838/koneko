@@ -7,6 +7,7 @@ import io.nekohasekai.sagernet.ktx.urlSafe
 import moe.matsuri.nb4a.SingBoxOptions
 import moe.matsuri.nb4a.utils.listByLineOrComma
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import java.util.UUID
 
 fun parseTuic(url: String): TuicBean {
     // https://github.com/daeuniverse/dae/discussions/182
@@ -27,9 +28,16 @@ fun parseTuic(url: String): TuicBean {
             val parts = rawUser.split(":", limit = 2)
             uuid = parts[0]
             token = parts.getOrElse(1) { "" }
-        } else {
+        } else if (runCatching { UUID.fromString(rawUser) }.isSuccess) {
             uuid = rawUser
             token = rawPass
+        } else {
+            // v2rayNG / 3x-ui export password-only TUIC links (#1090):
+            // the userinfo is the password, not a UUID. Keep the uuid
+            // field a valid UUID (the protocol requires it and sing-box
+            // omits an empty one), so the password lands in token.
+            token = rawUser
+            uuid = UUID.randomUUID().toString()
         }
 
         link.queryParameter("sni")?.let {

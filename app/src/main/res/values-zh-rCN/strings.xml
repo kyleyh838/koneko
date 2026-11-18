@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_desc">适用于 Android 之通用代理工具, 使用 Kotlin 编写。</string>
+    <string name="app_desc">基于 NekoBox 修改版，使用 sing-box 的 Android 通用代理工具。</string>
     <string name="project">项目</string>
     <string name="github">源代码</string>
     <string name="telegram">Telegram 更新频道</string>
@@ -8,8 +8,11 @@
     <string name="app_version">版本</string>
     <string name="logcat">导出调试信息</string>
     <string name="menu_configuration">配置</string>
+    <string name="dock_home">首页</string>
+    <string name="dock_group">分组</string>
     <string name="menu_group">分组</string>
     <string name="menu_about">关于</string>
+    <string name="more">更多</string>
     <string name="group_default">未分组</string>
     <string name="quick_toggle">切换</string>
     <string name="quick_enable">启用</string>
@@ -40,6 +43,7 @@
     <!-- misc -->
     <string name="service_mode">运行模式</string>
     <string name="service_mode_proxy">仅代理</string>
+    <string name="always_on_vpn">始终开启VPN</string>
     <string name="port_proxy">代理端口</string>
     <string name="port_http">HTTP 代理端口</string>
     <string name="port_local_dns">本地 DNS 端口</string>
@@ -105,6 +109,8 @@
     <!-- notification category -->
     <string name="service_vpn">VPN 服务</string>
     <string name="service_proxy">代理服务</string>
+    <string name="service_restored">VPN 已自动恢复：%s</string>
+    <string name="service_restored_channel">VPN 自动恢复提醒</string>
     <string name="forward_success">代理已启动。</string>
     <string name="invalid_server">无效的服务器</string>
     <string name="service_failed">失败:</string>
@@ -151,7 +157,7 @@
     <!-- tasker -->
     <!-- status -->
     <string name="connecting">正在连接…</string>
-    <string name="vpn_connected">已连接 , 点击此处测试连接</string>
+    <string name="vpn_connected">已连接</string>
     <string name="not_connected">未连接</string>
     <!-- subscriptions -->
     <string name="subscriptions">订阅</string>
@@ -187,7 +193,6 @@
     <string name="ws_path">WebSocket 路径</string>
     <string name="http_host">HTTP 主机</string>
     <string name="http_path">HTTP 路径</string>
-    <string name="show_bottom_bar">像 SagerNet 一样显示底栏</string>
     <string name="utls_fingerprint">uTLS 指纹</string>
     <string name="grpc_service_name">gRPC 服务名称</string>
     <string name="alpn">应用层协议协商</string>
@@ -224,7 +229,7 @@
     <string name="clear_profiles">清空</string>
     <string name="file_manager_missing">您的设备缺少 Android 标准文件选择器, 请安装一个, 如 Material Files.</string>
     <string name="need_reload">重载代理服务以应用修改</string>
-    <string name="theme">主题颜色</string>
+    <string name="dark_mode">深色模式</string>
     <string name="donate">捐款</string>
     <string name="donate_info">猫猫很可爱 请给猫猫钱</string>
     <string name="extra_headers">附加标头</string>
@@ -235,6 +240,10 @@
     <string name="transproxy_mode">透明代理模式</string>
     <string name="port_transproxy">透明代理端口</string>
     <string name="connection_test_url">连接测试链接</string>
+    <string name="ss_default_uot">导入 SS 默认开启 UoT</string>
+    <string name="ss_default_uot_sum">导入 Shadowsocks 节点时默认打开 UDP over TCP</string>
+    <string name="url_test_timeout">测速超时 (ms)</string>
+    <string name="url_test_timeout_sum">URL 测速超时时间（毫秒），默认 5000</string>
     <string name="connection_test_available_http">连接成功: HTTP 握手耗时 %dms</string>
     <string name="certificates">证书 (链)</string>
     <string name="bypass_lan_in_core">在核心中绕过 LAN</string>
@@ -244,7 +253,6 @@
     <string name="early_data_header_name">前置数据标头</string>
     <string name="config_settings">配置设置</string>
     <string name="custom_config">自定义配置</string>
-    <string name="night_mode">夜间模式</string>
     <string name="enable">启用</string>
     <string name="auto">自动</string>
     <string name="follow_system">跟随系统</string>
@@ -283,10 +291,15 @@
     <string name="connection_test_clear_results">清理测试结果</string>
     <string name="connection_test_domain_not_found">域名不存在</string>
     <string name="connection_test_tcp_ping_unavailable">TCPing 不可用</string>
+    <string name="connection_test_tcp_ping_unsupported">不支持 TCPing</string>
+    <string name="connection_test_icmp_ping_unsupported">不支持 ICMPing</string>
+    <string name="connection_test_no_testable_nodes_tcp">该分组没有可 TCPing 的节点</string>
+    <string name="connection_test_no_testable_nodes_icmp">该分组没有可 ICMPing 的节点</string>
+    <string name="connection_test_empty_group">该分组没有节点</string>
     <string name="connection_test_refused">连接重置</string>
     <string name="connection_test_timeout">超时</string>
     <string name="connection_test_unreachable">不可达</string>
-    <string name="tile_title">开关</string>
+    <string name="tile_title">KoNeko</string>
     <string name="append_http_proxy">追加 HTTP 代理至 VPN</string>
     <string name="append_http_proxy_sum">浏览器 / 一些支持的应用 将直接使用 HTTP 代理, 而不经过虚拟网卡设备 (Android 10+)</string>
     <string name="connection_test_icmp_ping_unavailable">ICMPing 不可用</string>
@@ -333,6 +346,8 @@
     <string name="profile_import_message">确认要导入配置 %s？</string>
     <string name="no_proxies_found_in_subscription">未在此订阅内找到服务器配置</string>
     <string name="action_export">导出</string>
+    <string name="action_export_backup">导出备份</string>
+    <string name="action_share_backup">分享备份</string>
     <string name="clear_profiles_message">您确定要清空该分组吗\?</string>
     <string name="remote_dns">远程 DNS</string>
     <string name="direct_dns">直连 DNS</string>
@@ -387,6 +402,16 @@
     <string name="wireguard_local_address">本地地址</string>
     <string name="wireguard_public_key">节点公钥</string>
     <string name="wireguard_psk">节点预共享密钥</string>
+    <string name="wireguard_persistent_keepalive">Persistent Keepalive</string>
+    <string name="wireguard_persistent_keepalive_sum">间隔（秒），0 为关闭</string>
+    <string name="anytls_idle_session_check_interval">空闲会话检查间隔 (s)</string>
+    <string name="anytls_idle_session_check_interval_sum">如 15s，留空为不设置</string>
+    <string name="anytls_idle_session_timeout">空闲会话超时 (s)</string>
+    <string name="anytls_idle_session_timeout_sum">如 30s，留空为不设置</string>
+    <string name="anytls_min_idle_session">最小空闲会话数</string>
+    <string name="anytls_min_idle_session_sum">0 为不设置</string>
+    <string name="shadowsocks_enable_mux">多路复用</string>
+    <string name="shadowsocks_enable_mux_sum">多个流复用同一个连接</string>
     <string name="resolve_destination_summary">如果目标地址是一个域, 则根据 IPv6 策略传出（与 FakeDNS 冲突）</string>
     <string name="resolve_destination">解析目标地址</string>
     <string name="destination_override_summary">使用探测的域来覆盖目标地址, 而不是仅用于路由</string>
@@ -411,6 +436,7 @@
         \n如果你必须使用它，先试试N=2，看看是否能解决你的问题。强烈建议不要在这里使用超过4个连接。</string>
     <string name="tools_network">网络</string>
     <string name="backup">备份</string>
+    <string name="backup_content">备份内容</string>
     <string name="backup_groups_and_configurations">分组和配置</string>
     <string name="backup_import">导入</string>
     <string name="backup_summary">如果路由规则与配置一起备份，则自定义出站将丢失。</string>
@@ -489,8 +515,7 @@
     <string name="network_change_reset_connections">当网络发生变化时重置出站连接</string>
     <string name="wake_reset_connections">当设备从睡眠状态唤醒时重置出站连接</string>
     <string name="preview_version_hint">本应用为预览版，可能存在诸多问题。若您不愿参与测试，请前往GitHub下载正式发布版本！</string>
-    <string name="check_update_preview">检查预览版更新</string>
-    <string name="check_update_release">检查正式版更新</string>
+    <string name="check_update_release">检查更新</string>
     <string name="update_dialog_title">发现新版本</string>
     <string name="update_dialog_message">当前版本：%1$s\n可升级版本：%2$s\n是否前往下载？</string>
     <string name="check_update_no">检查成功，但没有更新。</string>

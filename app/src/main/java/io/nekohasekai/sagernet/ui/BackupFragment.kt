@@ -29,11 +29,15 @@ import moe.matsuri.nb4a.utils.Util
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
 
 class BackupFragment : NamedFragment(R.layout.layout_backup) {
 
     override fun name0() = app.getString(R.string.backup)
+
+    private fun backupFileName(): String =
+        "koneko_backup_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date()) + ".json"
 
     var content = ""
     private val exportSettings =
@@ -84,7 +88,7 @@ class BackupFragment : NamedFragment(R.layout.layout_backup) {
                 )
                 onMainDispatcher {
                     startFilesForResult(
-                        exportSettings, "nekobox_backup_${Date().toLocaleString()}.json"
+                        exportSettings, backupFileName()
                     )
                 }
             }
@@ -99,7 +103,7 @@ class BackupFragment : NamedFragment(R.layout.layout_backup) {
                 )
                 app.cacheDir.mkdirs()
                 val cacheFile = File(
-                    app.cacheDir, "nekobox_backup_${Date().toLocaleString()}.json"
+                    app.cacheDir, backupFileName()
                 )
                 cacheFile.writeText(content)
                 onMainDispatcher {

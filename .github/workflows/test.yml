@@ -1,0 +1,39 @@
+name: Unit Tests
+on: [push]
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Golang Status
+        run: find buildScript libcore/*.sh | xargs cat | sha1sum > golang_status
+      - name: Libcore Status
+        run: git ls-files libcore | xargs cat | sha1sum > libcore_status
+      - name: LibCore Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            app/libs/libcore.aar
+          key: libcore-${{ hashFiles('.github/workflows/*', 'golang_status', 'libcore_status') }}
+          restore-keys: |
+            libcore-
+      - name: Check LibCore Cache
+        run: test -f app/libs/libcore.aar || { echo "libcore.aar not in cache; run the Release workflow once to populate it."; exit 1; }
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle
+          key: gradle-test-${{ hashFiles('**/*.gradle.kts') }}
+      - name: Restore Keystore
+        run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+      - name: Unit Tests
+        env:
+          BUILD_PLUGIN: none
+        run: |
+          echo "sdk.dir=${ANDROID_HOME}" > local.properties
+          echo "ndk.dir=${ANDROID_HOME}/ndk/25.0.8775105" >> local.properties
+          export LOCAL_PROPERTIES="${{ secrets.LOCAL_PROPERTIES }}"
+          ./run init action gradle
+          ./gradlew :app:testOssDebugUnitTest

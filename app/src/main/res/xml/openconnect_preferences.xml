@@ -1,0 +1,117 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <EditTextPreference
+        app:icon="@drawable/ic_social_emoji_symbols"
+        app:key="profileName"
+        app:title="@string/profile_name"
+        app:useSimpleSummaryProvider="true" />
+
+    <PreferenceCategory app:title="@string/proxy_cat">
+
+        <EditTextPreference
+            app:icon="@drawable/ic_hardware_router"
+            app:key="serverAddress"
+            app:title="@string/server_address"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_maps_directions_boat"
+            app:key="serverPort"
+            app:title="@string/server_port"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_person_24"
+            app:key="serverUsername"
+            app:title="@string/username"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:dialogLayout="@layout/layout_password_dialog"
+            app:icon="@drawable/ic_settings_password"
+            app:key="serverPassword"
+            app:title="@string/password" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference
+            app:defaultValue="anyconnect"
+            app:entries="@array/openconnect_flavor_value"
+            app:entryValues="@array/openconnect_flavor_value"
+            app:icon="@drawable/ic_baseline_compare_arrows_24"
+            app:key="serverOpenConnectFlavor"
+            app:title="@string/openconnect_flavor"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_legend_toggle_24"
+            app:key="serverOpenConnectAuthGroup"
+            app:title="@string/openconnect_auth_group"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverOpenConnectCookie"
+            app:title="@string/openconnect_cookie"
+            app:useSimpleSummaryProvider="true" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference
+            app:defaultValue="none"
+            app:entries="@array/openconnect_token_mode_value"
+            app:entryValues="@array/openconnect_token_mode_value"
+            app:icon="@drawable/ic_baseline_legend_toggle_24"
+            app:key="serverOpenConnectTokenMode"
+            app:title="@string/openconnect_token_mode"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverOpenConnectTokenSecret"
+            app:title="@string/openconnect_token_secret"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverOpenConnectTokenPin"
+            app:title="@string/openconnect_token_pin"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_hardware_router"
+            app:key="serverOpenConnectReportedOS"
+            app:title="@string/openconnect_reported_os"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_hardware_router"
+            app:key="serverOpenConnectUserAgent"
+            app:title="@string/openconnect_user_agent"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_hardware_router"
+            app:key="serverOpenConnectLocalHostname"
+            app:title="@string/openconnect_local_hostname"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:icon="@drawable/baseline_flight_takeoff_24"
+            app:key="serverOpenConnectNoUDP"
+            app:title="@string/openconnect_no_udp" />
+        <EditTextPreference
+            app:icon="@drawable/ic_maps_directions_boat"
+            app:key="serverMTU"
+            app:title="@string/mtu"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:icon="@drawable/ic_notification_enhanced_encryption"
+            app:key="serverAllowInsecure"
+            app:title="@string/allow_insecure" />
+        <EditTextPreference
+            app:icon="@drawable/ic_action_copyright"
+            app:key="serverSNI"
+            app:title="@string/sni"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverCertificates"
+            app:title="@string/certificates"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverOpenConnectClientCert"
+            app:title="@string/openconnect_client_cert"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_vpn_key_24"
+            app:key="serverOpenConnectClientKey"
+            app:title="@string/openconnect_client_key"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

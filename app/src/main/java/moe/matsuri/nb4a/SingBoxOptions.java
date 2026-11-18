@@ -113,6 +113,8 @@ public class SingBoxOptions {
 
         public List<SingBoxOption> outbounds;
 
+        public List<SingBoxOption> endpoints;
+
         public RouteOptions route;
 
         public ExperimentalOptions experimental;
@@ -312,8 +314,6 @@ public class SingBoxOptions {
 
         public Boolean reverse_mapping;
 
-        public DNSFakeIPOptions fakeip;
-
         // Generate note: nested type DNSClientOptions
         public String strategy;
 
@@ -321,25 +321,30 @@ public class SingBoxOptions {
 
         public Boolean disable_expire;
 
-        public Boolean independent_cache;
-
         // End of public DNSClientOptions ;
 
     }
 
     public static class DNSServerOptions extends SingBoxOption {
 
+        public String type;
+
         public String tag;
 
-        public String address;
+        public String server;
 
-        public String address_resolver;
+        public Integer server_port;
 
-        public String address_strategy;
+        public String path;
 
-        public Long address_fallback_delay;
+        public String domain_resolver;
 
-        public String strategy;
+        public String inet4_range;
+
+        public String inet6_range;
+
+        @SerializedName("interface")
+        public String interface_;
 
         public String detour;
 
@@ -352,18 +357,6 @@ public class SingBoxOptions {
         public Boolean disable_cache;
 
         public Boolean disable_expire;
-
-        public Boolean independent_cache;
-
-    }
-
-    public static class DNSFakeIPOptions extends SingBoxOption {
-
-        public Boolean enabled;
-
-        public String inet4_range;
-
-        public String inet6_range;
 
     }
 
@@ -879,6 +872,18 @@ public class SingBoxOptions {
         // Generate note: option type:  public SelectorOutboundOptions SelectorOptions;
 
         // Generate note: option type:  public URLTestOutboundOptions URLTestOptions;
+
+    }
+
+    // sing-box 1.14: endpoints are addressable by tag just like outbounds,
+    // but live in the top-level "endpoints" list. WireGuard (and OpenVPN /
+    // OpenConnect) only exist as endpoints now; there is no wireguard
+    // outbound anymore.
+    public static class Endpoint extends SingBoxOption {
+
+        public String type;
+
+        public String tag;
 
     }
 
@@ -2304,20 +2309,11 @@ public class SingBoxOptions {
         public Integer mtu;
 
         // Generate note: Listable
-        public List<String> inet4_address;
-
-        // Generate note: Listable
-        public List<String> inet6_address;
+        public List<String> address;
 
         public Boolean auto_route;
 
         public Boolean strict_route;
-
-        // Generate note: Listable
-        public List<String> inet4_route_address;
-
-        // Generate note: Listable
-        public List<String> inet6_route_address;
 
         // Generate note: Listable
         public List<String> include_interface;
@@ -2345,8 +2341,6 @@ public class SingBoxOptions {
 
         // Generate note: Listable
         public List<String> exclude_package;
-
-        public Boolean endpoint_independent_nat;
 
         public Long udp_timeout;
 
@@ -2778,12 +2772,11 @@ public class SingBoxOptions {
 
     public static class WireGuardPeer extends SingBoxOption {
 
-        // Generate note: nested type ServerOptions
-        public String server;
+        // 1.14 endpoint peer: address + port (the old outbound flattened the
+        // single peer into server / server_port on the outbound itself).
+        public String address;
 
-        public Integer server_port;
-
-        // End of public ServerOptions ;
+        public Integer port;
 
         public String public_key;
 
@@ -2791,6 +2784,8 @@ public class SingBoxOptions {
 
         // Generate note: Listable
         public List<String> allowed_ips;
+
+        public Integer persistent_keepalive_interval;
 
         // Generate note: Base64 String
         public String reserved;
@@ -2804,20 +2799,11 @@ public class SingBoxOptions {
         public Integer mtu;
 
         // Generate note: Listable
-        public List<String> inet4_address;
-
-        // Generate note: Listable
-        public List<String> inet6_address;
+        public List<String> address;
 
         public Boolean auto_route;
 
         public Boolean strict_route;
-
-        // Generate note: Listable
-        public List<String> inet4_route_address;
-
-        // Generate note: Listable
-        public List<String> inet6_route_address;
 
         // Generate note: Listable
         public List<String> include_interface;
@@ -2845,8 +2831,6 @@ public class SingBoxOptions {
 
         // Generate note: Listable
         public List<String> exclude_package;
-
-        public Boolean endpoint_independent_nat;
 
         public Long udp_timeout;
 
@@ -3851,68 +3835,209 @@ public class SingBoxOptions {
 
     }
 
-    public static class Outbound_WireGuardOptions extends Outbound {
+    public static class Endpoint_WireGuardOptions extends Endpoint {
 
-        // Generate note: nested type DialerOptions
-        public String detour;
+        // sing-box 1.14 option.WireGuardEndpointOptions. The old wireguard
+        // outbound is gone; the node is emitted into "endpoints" instead.
+        public Boolean system;
 
-        public String bind_interface;
+        public String name;
 
-        public String inet4_bind_address;
-
-        public String inet6_bind_address;
-
-        public String protect_path;
-
-        public Integer routing_mark;
-
-        public Boolean reuse_addr;
-
-        public Long connect_timeout;
-
-        public Boolean tcp_fast_open;
-
-        public Boolean tcp_multi_path;
-
-        public Boolean udp_fragment;
-
-
-        public String domain_strategy;
-
-        public Long fallback_delay;
-
-        // End of public DialerOptions ;
-
-        public Boolean system_interface;
-
-        public String interface_name;
+        public Integer mtu;
 
         // Generate note: Listable
-        public List<String> local_address;
+        public List<String> address;
 
         public String private_key;
 
+        public Integer listen_port;
+
         public List<WireGuardPeer> peers;
 
-        // Generate note: nested type ServerOptions
+        public Long udp_timeout;
+
+        public Integer workers;
+
+    }
+
+    public static class Endpoint_OpenVPNOptions extends Endpoint {
+
+        // sing-box 1.14 option.OpenVPNClientEndpointOptions (client only).
         public String server;
 
         public Integer server_port;
 
-        // End of public ServerOptions ;
+        public String network;
 
-        public String peer_public_key;
+        public String mode;
 
-        public String pre_shared_key;
+        public String username;
 
-        // Generate note: Base64 String
-        public String reserved;
+        public String password;
 
-        public Integer workers;
+        // Generate note: Listable
+        public List<String> address;
+
+        public String cipher;
+
+        // Generate note: Listable
+        public List<String> data_ciphers;
+
+        public String auth;
 
         public Integer mtu;
 
-        public String network;
+        public Boolean remote_random;
+
+        public Boolean route_no_pull;
+
+        public Boolean redirect_gateway;
+
+        // Generate note: Listable
+        public List<String> static_key;
+
+        public String key_direction;
+
+        public OpenVPNOutboundTLSOptions tls;
+
+    }
+
+    public static class OpenVPNOutboundTLSOptions extends SingBoxOption {
+
+        public String server_name;
+
+        public String remote_certificate_tls;
+
+        // Generate note: Listable
+        public List<String> certificate;
+
+        // Generate note: Listable
+        public List<String> client_certificate;
+
+        // Generate note: Listable
+        public List<String> client_key;
+
+        // Generate note: Listable
+        public List<String> peer_fingerprint;
+
+        public OpenVPNControlWrapOptions control_wrap;
+
+    }
+
+    public static class OpenVPNControlWrapOptions extends SingBoxOption {
+
+        public String type;
+
+        // Generate note: Listable
+        public List<String> key;
+
+        public String direction;
+
+    }
+
+    public static class Endpoint_OpenConnectOptions extends Endpoint {
+
+        // sing-box 1.14 option.OpenConnectEndpointOptions.
+        public String server;
+
+        public String flavor;
+
+        public String username;
+
+        public String password;
+
+        public String auth_group;
+
+        public String cookie;
+
+        public OpenConnectTokenOptions token;
+
+        public String reported_os;
+
+        public String user_agent;
+
+        public String local_hostname;
+
+        public Boolean no_udp;
+
+        public Integer mtu;
+
+        public OpenConnectTLSOptions tls;
+
+    }
+
+    public static class OpenConnectTokenOptions extends SingBoxOption {
+
+        public String mode;
+
+        public String secret;
+
+        public String pin;
+
+    }
+
+    public static class OpenConnectTLSOptions extends SingBoxOption {
+
+        public Boolean insecure;
+
+        public String server_name;
+
+        // Generate note: Listable
+        public List<String> certificate_authority;
+
+        // Generate note: Listable
+        public List<String> client_certificate;
+
+        // Generate note: Listable
+        public List<String> client_key;
+
+    }
+
+    public static class Outbound_NaiveOptions extends Outbound {
+
+        // sing-box 1.14 option.NaiveOutboundOptions. Native in the core now,
+        // so NaiveBean no longer needs the external naive-plugin binary.
+        public String server;
+
+        public Integer server_port;
+
+        public String username;
+
+        public String password;
+
+        public Integer insecure_concurrency;
+
+        public Map<String, List<String>> extra_headers;
+
+        public Boolean quic;
+
+        public String quic_congestion_control;
+
+        public OutboundTLSOptions tls;
+
+    }
+
+    public static class Outbound_SnellOptions extends Outbound {
+
+        // sing-box 1.14 option.SnellOutboundOptions. version 4 takes
+        // obfs_mode/obfs_host; version 6 takes mode instead.
+        public Integer version;
+
+        public String server;
+
+        public Integer server_port;
+
+        public String psk;
+
+        public String userkey;
+
+        public Boolean reuse;
+
+        public String obfs_mode;
+
+        public String obfs_host;
+
+        public String mode;
 
     }
 
@@ -4454,6 +4579,8 @@ public class SingBoxOptions {
 
         public String action;
 
+        public String strategy;
+
         public String outbound;
 
     }
@@ -4533,6 +4660,10 @@ public class SingBoxOptions {
         public Boolean disable_cache;
 
         public Integer rewrite_ttl;
+
+        public String action;
+
+        public String strategy;
 
     }
 
@@ -4638,6 +4769,8 @@ public class SingBoxOptions {
         public String idle_session_check_interval;
 
         public String idle_session_timeout;
+
+        public Integer min_idle_session;
 
     }
 

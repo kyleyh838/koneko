@@ -184,6 +184,10 @@ class SagerNet : Application(),
                             "connection-test",
                             application.getText(R.string.connection_test),
                             NotificationManager.IMPORTANCE_DEFAULT
+                        ), NotificationChannel(
+                            "service-restored",
+                            application.getText(R.string.service_restored_channel),
+                            NotificationManager.IMPORTANCE_DEFAULT
                         )
                     )
                 )

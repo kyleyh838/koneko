@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light theme: dark status/navigation bar icons on the light page color. -->
+    <bool name="light_status_bar">true</bool>
+    <bool name="light_navigation_bar">true</bool>
+</resources>

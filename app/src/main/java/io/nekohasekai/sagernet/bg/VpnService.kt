@@ -130,12 +130,16 @@ class VpnService : BaseVpnService(),
         val packageName = packageName
         val proxyApps = DataStore.proxyApps
         var bypass = DataStore.bypass
+        val appBlock = DataStore.appBlock
         val workaroundSYSTEM = false /* DataStore.tunImplementation == TunImplementation.SYSTEM */
         val needBypassRootUid = workaroundSYSTEM || data.proxy!!.config.trafficMap.values.any {
             it[0].hysteriaBean?.protocol == HysteriaBean.PROTOCOL_FAKETCP
         }
 
-        if (proxyApps || needBypassRootUid) {
+        // In block mode no app is allow/disallowed at the VPN layer: all
+        // traffic enters the TUN and the sing-box reject rule drops the
+        // blocked packages (see ConfigBuilder).
+        if ((proxyApps && !appBlock) || needBypassRootUid) {
             val individual = mutableSetOf<String>()
             val allApps by lazy {
                 packageManager.getInstalledPackages(PackageManager.GET_PERMISSIONS).filter {

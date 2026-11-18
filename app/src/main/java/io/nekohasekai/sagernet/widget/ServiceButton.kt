@@ -1,25 +1,23 @@
 package io.nekohasekai.sagernet.widget
 
 import android.content.Context
-import android.graphics.drawable.Drawable
+import android.content.res.ColorStateList
 import android.os.Build
 import android.util.AttributeSet
 import android.view.PointerIcon
 import android.view.View
-import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.TooltipCompat
+import androidx.core.content.ContextCompat
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
-import androidx.vectordrawable.graphics.drawable.Animatable2Compat
-import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.BaseProgressIndicator
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.bg.BaseService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import java.util.*
 
 class ServiceButton @JvmOverloads constructor(
     context: Context,
@@ -28,55 +26,12 @@ class ServiceButton @JvmOverloads constructor(
 ) :
     FloatingActionButton(context, attrs, defStyleAttr), DynamicAnimation.OnAnimationEndListener {
 
-    private val callback = object : Animatable2Compat.AnimationCallback() {
-        override fun onAnimationEnd(drawable: Drawable) {
-            super.onAnimationEnd(drawable)
-            var next = animationQueue.peek() ?: return
-            if (next.icon.current == drawable) {
-                animationQueue.pop()
-                next = animationQueue.peek() ?: return
-            }
-            next.start()
-        }
+    // Task 10-2: one static power icon for every state (the old paper-plane
+    // AnimatedVectorDrawables are gone). The button state is still shown by
+    // the green/grey power ring + the progress indicator, not by the icon.
+    init {
+        setImageDrawable(AppCompatResources.getDrawable(context, R.drawable.ic_power))
     }
-
-    private inner class AnimatedState(
-        @DrawableRes resId: Int,
-        private val onStart: BaseProgressIndicator<*>.() -> Unit = { hideProgress() }
-    ) {
-        val icon: AnimatedVectorDrawableCompat =
-            AnimatedVectorDrawableCompat.create(context, resId)!!.apply {
-                registerAnimationCallback(this@ServiceButton.callback)
-            }
-
-        fun start() {
-            setImageDrawable(icon)
-            icon.start()
-            progress.onStart()
-        }
-
-        fun stop() = icon.stop()
-    }
-
-    private val iconStopped by lazy { AnimatedState(R.drawable.ic_service_stopped) }
-    private val iconConnecting by lazy {
-        AnimatedState(R.drawable.ic_service_connecting) {
-            hideProgress()
-            delayedAnimation = (context as LifecycleOwner).lifecycleScope.launchWhenStarted {
-                delay(context.resources.getInteger(android.R.integer.config_mediumAnimTime) + 1000L)
-                isIndeterminate = true
-                show()
-            }
-        }
-    }
-    private val iconConnected by lazy {
-        AnimatedState(R.drawable.ic_service_connected) {
-            delayedAnimation?.cancel()
-            setProgressCompat(1, true)
-        }
-    }
-    private val iconStopping by lazy { AnimatedState(R.drawable.ic_service_stopping) }
-    private val animationQueue = ArrayDeque<AnimatedState>()
 
     private var checked = false
     private var delayedAnimation: Job? = null
@@ -108,13 +63,31 @@ class ServiceButton @JvmOverloads constructor(
     }
 
     fun changeState(state: BaseService.State, previousState: BaseService.State, animate: Boolean) {
+        // Task 11-2: the icon lights up together with the power ring: bright
+        // green when connected, dim grey otherwise.
+        imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(
+                context,
+                if (state == BaseService.State.Connected) R.color.nkb_connected
+                else R.color.nkb_text_hint
+            )
+        )
+        // Progress handling moved here from the old per-state AnimatedState
+        // onStart lambdas; the icon itself no longer changes with state.
         when (state) {
-            BaseService.State.Connecting -> changeState(iconConnecting, animate)
-            BaseService.State.Connected -> changeState(iconConnected, animate)
-            BaseService.State.Stopping -> {
-                changeState(iconStopping, animate && previousState == BaseService.State.Connected)
+            BaseService.State.Connecting -> {
+                hideProgress()
+                delayedAnimation = (context as LifecycleOwner).lifecycleScope.launchWhenStarted {
+                    delay(context.resources.getInteger(android.R.integer.config_mediumAnimTime) + 1000L)
+                    progress.isIndeterminate = true
+                    progress.show()
+                }
             }
-            else -> changeState(iconStopped, animate)
+            BaseService.State.Connected -> {
+                delayedAnimation?.cancel()
+                progress.setProgressCompat(1, true)
+            }
+            else -> hideProgress()
         }
         checked = state == BaseService.State.Connected
         refreshDrawableState()
@@ -129,22 +102,4 @@ class ServiceButton @JvmOverloads constructor(
         )
     }
 
-    private fun changeState(icon: AnimatedState, animate: Boolean) {
-        fun counters(a: AnimatedState, b: AnimatedState): Boolean =
-            a == iconStopped && b == iconConnecting ||
-                    a == iconConnecting && b == iconStopped ||
-                    a == iconConnected && b == iconStopping ||
-                    a == iconStopping && b == iconConnected
-        if (animate) {
-            if (animationQueue.size < 2 || !counters(animationQueue.last, icon)) {
-                animationQueue.add(icon)
-                if (animationQueue.size == 1) icon.start()
-            } else animationQueue.removeLast()
-        } else {
-            animationQueue.peekFirst()?.stop()
-            animationQueue.clear()
-            icon.start()    // force ensureAnimatorSet to be called so that stop() will work
-            icon.stop()
-        }
-    }
 }

@@ -71,11 +71,15 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
             }
         }
 
-        override fun getMaterialAboutList(activityContext: Context): MaterialAboutList {
+        override fun getMaterialAboutList(activityContext: Context?): MaterialAboutList {
+            // ListTask passes fragment.getActivity(), which is null when
+            // the fragment is detached; a detached fragment has nothing
+            // to show, so return an empty list.
+            activityContext ?: return MaterialAboutList.Builder().build()
             return MaterialAboutList.Builder()
                 .addCard(
                     MaterialAboutCard.Builder()
-                        .outline(false)
+                        .outline(true)
                         .addItem(
                             MaterialAboutActionItem.Builder()
                                 .icon(R.drawable.ic_baseline_update_24)
@@ -83,12 +87,13 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                                 .subText(SagerNet.appVersionNameForDisplay)
                                 .setOnClickAction {
                                     requireContext().launchCustomTab(
-                                        "https://github.com/MatsuriDayo/NekoBoxForAndroid/releases"
+                                        "https://github.com/kyleyh838/koneko/releases"
                                     )
                                 }
                                 .build())
                         .addItem(
                             MaterialAboutActionItem.Builder()
+                                .icon(R.drawable.ic_baseline_refresh_24)
                                 .text(R.string.check_update_release)
                                 .setOnClickAction {
                                     checkUpdate(false)
@@ -96,28 +101,10 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                                 .build())
                         .addItem(
                             MaterialAboutActionItem.Builder()
-                                .text(R.string.check_update_preview)
-                                .setOnClickAction {
-                                    checkUpdate(true)
-                                }
-                                .build())
-                        .addItem(
-                            MaterialAboutActionItem.Builder()
                                 .icon(R.drawable.ic_baseline_layers_24)
-                                .text(getString(R.string.version_x, "sing-box"))
+                                .text(activityContext.getString(R.string.version_x, "sing-box"))
                                 .subText(Libcore.versionBox())
                                 .setOnClickAction { }
-                                .build())
-                        .addItem(
-                            MaterialAboutActionItem.Builder()
-                                .icon(R.drawable.ic_baseline_card_giftcard_24)
-                                .text(R.string.donate)
-                                .subText(R.string.donate_info)
-                                .setOnClickAction {
-                                    requireContext().launchCustomTab(
-                                        "https://matsuridayo.github.io/index_docs/#donate"
-                                    )
-                                }
                                 .build())
                         .apply {
                             PackageCache.awaitLoadSync()
@@ -130,7 +117,7 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                                         MaterialAboutActionItem.Builder()
                                             .icon(R.drawable.ic_baseline_nfc_24)
                                             .text(
-                                                getString(
+                                                activityContext.getString(
                                                     R.string.version_x,
                                                     pluginId
                                                 ) + " (${Plugins.displayExeProvider(pkg.packageName)})"
@@ -175,7 +162,7 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                         .build())
                 .addCard(
                     MaterialAboutCard.Builder()
-                        .outline(false)
+                        .outline(true)
                         .title(R.string.project)
                         .addItem(
                             MaterialAboutActionItem.Builder()
@@ -183,18 +170,8 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                                 .text(R.string.github)
                                 .setOnClickAction {
                                     requireContext().launchCustomTab(
-                                        "https://github.com/MatsuriDayo/NekoBoxForAndroid"
+                                        "https://github.com/kyleyh838/koneko"
 
-                                    )
-                                }
-                                .build())
-                        .addItem(
-                            MaterialAboutActionItem.Builder()
-                                .icon(R.drawable.ic_qu_shadowsocks_foreground)
-                                .text(R.string.telegram)
-                                .setOnClickAction {
-                                    requireContext().launchCustomTab(
-                                        "https://t.me/MatsuriDayo"
                                     )
                                 }
                                 .build())
@@ -220,9 +197,9 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                     }
                     val response = client.newRequest().apply {
                         if (checkPreview) {
-                            setURL("https://api.github.com/repos/MatsuriDayo/NekoBoxForAndroid/releases/tags/preview")
+                            setURL("https://api.github.com/repos/kyleyh838/koneko/releases/tags/preview")
                         } else {
-                            setURL("https://api.github.com/repos/MatsuriDayo/NekoBoxForAndroid/releases/latest")
+                            setURL("https://api.github.com/repos/kyleyh838/koneko/releases/latest")
                         }
                     }.execute()
                     val release = JSONObject(Util.getStringBox(response.contentString))

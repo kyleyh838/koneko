@@ -10,8 +10,7 @@ object Key {
     const val PERSIST_ACROSS_REBOOT = "isAutoConnect"
 
     const val APP_EXPERT = "isExpert"
-    const val APP_THEME = "appTheme"
-    const val NIGHT_THEME = "nightTheme"
+    const val DARK_MODE = "darkMode"
     const val SERVICE_MODE = "serviceMode"
     const val MODE_VPN = "vpn"
     const val MODE_PROXY = "proxy"
@@ -28,6 +27,10 @@ object Key {
     const val PROXY_APPS = "proxyApps"
     const val BYPASS_MODE = "bypassMode"
     const val INDIVIDUAL = "individual"
+    const val APP_BLOCK = "appBlock"
+    const val INDIVIDUAL_BLOCK = "individualBlock"
+    const val SS_DEFAULT_UOT = "ssDefaultUoT"
+    const val URL_TEST_TIMEOUT = "urlTestTimeout"
     const val METERED_NETWORK = "meteredNetwork"
 
     const val TRAFFIC_SNIFFING = "trafficSniffing"
@@ -57,7 +60,6 @@ object Key {
     const val GLOBAL_ALLOW_INSECURE = "globalAllowInsecure"
 
     const val ACQUIRE_WAKE_LOCK = "acquireWakeLock"
-    const val SHOW_BOTTOM_BAR = "showBottomBar"
 
     const val ALLOW_INSECURE_ON_REQUEST = "allowInsecureOnRequest"
 
@@ -118,6 +120,39 @@ object Key {
     const val SERVER_CONGESTION_CONTROLLER = "serverCongestionController"
     const val SERVER_DISABLE_SNI = "serverDisableSNI"
     const val SERVER_REDUCE_RTT = "serverReduceRTT"
+
+    const val SERVER_SNELL_VERSION = "serverSnellVersion"
+    const val SERVER_SNELL_MODE = "serverSnellMode"
+    const val SERVER_SNELL_REUSE = "serverSnellReuse"
+
+    const val SERVER_OPENVPN_MODE = "serverOpenVPNMode"
+    const val SERVER_OPENVPN_AUTH = "serverOpenVPNAuth"
+    const val SERVER_OPENVPN_ADDRESS = "serverOpenVPNAddress"
+    const val SERVER_OPENVPN_DATA_CIPHERS = "serverOpenVPNDataCiphers"
+    const val SERVER_OPENVPN_CLIENT_CERT = "serverOpenVPNClientCert"
+    const val SERVER_OPENVPN_CLIENT_KEY = "serverOpenVPNClientKey"
+    const val SERVER_OPENVPN_PEER_FINGERPRINT = "serverOpenVPNPeerFingerprint"
+    const val SERVER_OPENVPN_CONTROL_WRAP_TYPE = "serverOpenVPNControlWrapType"
+    const val SERVER_OPENVPN_CONTROL_WRAP_KEY = "serverOpenVPNControlWrapKey"
+    const val SERVER_OPENVPN_CONTROL_WRAP_DIRECTION = "serverOpenVPNControlWrapDirection"
+    const val SERVER_OPENVPN_STATIC_KEY = "serverOpenVPNStaticKey"
+    const val SERVER_OPENVPN_KEY_DIRECTION = "serverOpenVPNKeyDirection"
+    const val SERVER_OPENVPN_REMOTE_RANDOM = "serverOpenVPNRemoteRandom"
+    const val SERVER_OPENVPN_ROUTE_NO_PULL = "serverOpenVPNRouteNoPull"
+    const val SERVER_OPENVPN_REDIRECT_GATEWAY = "serverOpenVPNRedirectGateway"
+
+    const val SERVER_OPENCONNECT_FLAVOR = "serverOpenConnectFlavor"
+    const val SERVER_OPENCONNECT_AUTH_GROUP = "serverOpenConnectAuthGroup"
+    const val SERVER_OPENCONNECT_COOKIE = "serverOpenConnectCookie"
+    const val SERVER_OPENCONNECT_TOKEN_MODE = "serverOpenConnectTokenMode"
+    const val SERVER_OPENCONNECT_TOKEN_SECRET = "serverOpenConnectTokenSecret"
+    const val SERVER_OPENCONNECT_TOKEN_PIN = "serverOpenConnectTokenPin"
+    const val SERVER_OPENCONNECT_REPORTED_OS = "serverOpenConnectReportedOS"
+    const val SERVER_OPENCONNECT_USER_AGENT = "serverOpenConnectUserAgent"
+    const val SERVER_OPENCONNECT_LOCAL_HOSTNAME = "serverOpenConnectLocalHostname"
+    const val SERVER_OPENCONNECT_NO_UDP = "serverOpenConnectNoUDP"
+    const val SERVER_OPENCONNECT_CLIENT_CERT = "serverOpenConnectClientCert"
+    const val SERVER_OPENCONNECT_CLIENT_KEY = "serverOpenConnectClientKey"
 
     const val ROUTE_NAME = "routeName"
     const val ROUTE_DOMAIN = "routeDomain"
@@ -183,5 +218,5 @@ object Action {
     const val RELOAD = "io.nekohasekai.sagernet.RELOAD"
 
     // const val SWITCH_WAKE_LOCK = "io.nekohasekai.sagernet.SWITCH_WAKELOCK"
-    const val RESET_UPSTREAM_CONNECTIONS = "moe.nb4a.RESET_UPSTREAM_CONNECTIONS"
+    const val RESET_UPSTREAM_CONNECTIONS = "com.koneko.android.RESET_UPSTREAM_CONNECTIONS"
 }

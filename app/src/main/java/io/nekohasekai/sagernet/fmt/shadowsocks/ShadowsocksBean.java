@@ -19,6 +19,8 @@ public class ShadowsocksBean extends AbstractBean {
 
     public Boolean sUoT;
 
+    public Boolean enableMux;
+
     @Override
     public void initializeDefaultValues() {
         super.initializeDefaultValues();
@@ -28,16 +30,18 @@ public class ShadowsocksBean extends AbstractBean {
         if (password == null) password = "";
         if (plugin == null) plugin = "";
         if (sUoT == null) sUoT = false;
+        if (enableMux == null) enableMux = false;
     }
 
     @Override
     public void serialize(ByteBufferOutput output) {
-        output.writeInt(2);
+        output.writeInt(3);
         super.serialize(output);
         output.writeString(method);
         output.writeString(password);
         output.writeString(plugin);
         output.writeBoolean(sUoT);
+        output.writeBoolean(enableMux);
     }
 
     @Override
@@ -48,6 +52,7 @@ public class ShadowsocksBean extends AbstractBean {
         password = input.readString();
         plugin = input.readString();
         sUoT = input.readBoolean();
+        if (version >= 3) enableMux = input.readBoolean();
     }
 
     @NotNull

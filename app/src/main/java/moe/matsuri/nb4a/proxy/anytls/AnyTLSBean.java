@@ -36,6 +36,10 @@ public class AnyTLSBean extends AbstractBean {
 
     public String echConfig;
 
+    public String idleSessionCheckInterval;
+    public String idleSessionTimeout;
+    public Integer minIdleSession;
+
     @Override
     public void initializeDefaultValues() {
         super.initializeDefaultValues();
@@ -46,11 +50,14 @@ public class AnyTLSBean extends AbstractBean {
         if (utlsFingerprint == null) utlsFingerprint = "";
         if (allowInsecure == null) allowInsecure = false;
         if (echConfig == null) echConfig = "";
+        if (idleSessionCheckInterval == null) idleSessionCheckInterval = "";
+        if (idleSessionTimeout == null) idleSessionTimeout = "";
+        if (minIdleSession == null) minIdleSession = 0;
     }
 
     @Override
     public void serialize(ByteBufferOutput output) {
-        output.writeInt(0);
+        output.writeInt(1);
         super.serialize(output);
         output.writeString(password);
         output.writeString(sni);
@@ -59,6 +66,9 @@ public class AnyTLSBean extends AbstractBean {
         output.writeString(utlsFingerprint);
         output.writeBoolean(allowInsecure);
         output.writeString(echConfig);
+        output.writeString(idleSessionCheckInterval);
+        output.writeString(idleSessionTimeout);
+        output.writeInt(minIdleSession);
     }
 
     @Override
@@ -72,6 +82,11 @@ public class AnyTLSBean extends AbstractBean {
         utlsFingerprint = input.readString();
         allowInsecure = input.readBoolean();
         echConfig = input.readString();
+        if (version >= 1) {
+            idleSessionCheckInterval = input.readString();
+            idleSessionTimeout = input.readString();
+            minIdleSession = input.readInt();
+        }
     }
 
     @NotNull

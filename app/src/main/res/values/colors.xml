@@ -1,32 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <integer-array name="material_colors">
-        <item>@color/material_red_500</item>
-        <item>@color/color_pink_ssr</item>
-        <item>@color/material_pink_500</item>
-        <item>@color/material_purple_500</item>
-        <item>@color/material_deep_purple_500</item>
-        <item>@color/material_indigo_500</item>
-        <item>@color/material_blue_500</item>
-        <item>@color/material_light_blue_500</item>
-        <item>@color/material_cyan_500</item>
-        <item>@color/material_teal_500</item>
-        <item>@color/material_green_500</item>
-
-        <item>@color/material_light_green_500</item>
-        <item>@color/material_lime_500</item>
-        <item>@color/material_yellow_500</item>
-        <item>@color/material_amber_500</item>
-        <item>@color/material_orange_500</item>
-        <item>@color/material_deep_orange_500</item>
-
-        <item>@color/material_brown_500</item>
-        <item>@color/material_grey_500</item>
-        <item>@color/material_blue_grey_500</item>
-        <item>@color/material_light_black</item>
-    </integer-array>
-
     <color name="material_amber_100">#FFECB3</color>
     <color name="material_amber_200">#FFE082</color>
     <color name="material_amber_300">#FFD54F</color>
@@ -283,11 +257,22 @@
 
     <color name="fab_color_progress">@color/material_light_black</color>
 
-    <color name="color_pink_ssr">#fb7299</color>
-
-    <color name="color_ng_black_accent">#9E9E9E</color>
-    <color name="color_ng_black_primary">#2B2B2B</color>
-
     <color name="preference_simple_menu_background">#FAFAFA</color>
+
+    <!-- KoNeko FlClash-style design tokens (light values; night overrides in values-night/colors.xml) -->
+    <color name="nkb_page">#F1F2F4</color>
+    <color name="nkb_card">#FFFFFF</color>
+    <color name="nkb_card_stroke">#E2E5EA</color>
+    <color name="nkb_accent">#369AC3</color>
+    <color name="nkb_text_hint">#8A94A6</color>
+    <color name="nkb_connected">#34C759</color>
+    <color name="nkb_latency_good">#34C759</color>
+    <color name="nkb_latency_mid">#E8C15A</color>
+    <color name="nkb_latency_bad">#E06C5A</color>
+    <color name="nkb_dock_bg">#E6FFFFFF</color>
+    <color name="nkb_accent_soft">#2E369AC3</color>
+    <color name="nkb_divider">#EFF0F2</color>
+    <color name="nkb_circle_checked">#369AC3</color>
+    <color name="nkb_circle_ring">#43484C</color>
 
 </resources>

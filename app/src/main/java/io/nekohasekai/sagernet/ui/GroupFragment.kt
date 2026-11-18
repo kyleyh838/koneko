@@ -1,6 +1,7 @@
 package io.nekohasekai.sagernet.ui
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.format.Formatter
 import android.view.MenuItem
@@ -10,6 +11,8 @@ import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.*
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -387,6 +390,14 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group),
             updateButton.isInvisible = proxyGroup.type != GroupType.SUBSCRIPTION
             groupName.text = proxyGroup.displayName()
 
+            // Node-count / update-time status as an accent pill (Task 4)
+            val accent = requireContext().getColour(R.color.nkb_accent)
+            groupStatus.background =
+                ContextCompat.getDrawable(requireContext(), R.drawable.bg_pill)
+            groupStatus.backgroundTintList =
+                ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 46))
+            groupStatus.setTextColor(accent)
+
             editButton.setOnClickListener {
                 startActivity(Intent(it.context, GroupSettingsActivity::class.java).apply {
                     putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id)
@@ -457,7 +468,7 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group),
                         )
                     )
                 }
-                groupStatus.setPadding(0)
+                groupStatus.setPadding(dp2px(9), dp2px(4), dp2px(9), dp2px(4))
             } else if (subscription != null && !subscription.subscriptionUserinfo.isNullOrBlank()) { // Raw
                 var text = ""
 
@@ -502,11 +513,11 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group),
                 if (text.isNotEmpty()) {
                     groupTraffic.isVisible = true
                     groupTraffic.text = text
-                    groupStatus.setPadding(0)
+                    groupStatus.setPadding(dp2px(9), dp2px(4), dp2px(9), dp2px(4))
                 }
             } else {
                 groupTraffic.isVisible = false
-                groupStatus.setPadding(0, 0, 0, dp2px(4))
+                groupStatus.setPadding(dp2px(9), dp2px(4), dp2px(9), dp2px(4))
             }
 
             groupUser.text = subscription?.username ?: ""

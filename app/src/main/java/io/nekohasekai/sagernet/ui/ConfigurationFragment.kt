@@ -2,13 +2,16 @@ package io.nekohasekai.sagernet.ui
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.text.SpannableStringBuilder
 import android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
 import android.text.format.Formatter
+import android.text.method.ScrollingMovementMethod
 import android.text.style.ForegroundColorSpan
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -19,9 +22,13 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.ColorRes
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
@@ -33,7 +40,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import io.nekohasekai.sagernet.GroupOrder
@@ -60,6 +69,7 @@ import io.nekohasekai.sagernet.group.RawUpdater
 import io.nekohasekai.sagernet.ktx.FixedLinearLayoutManager
 import io.nekohasekai.sagernet.ktx.Logs
 import io.nekohasekai.sagernet.ktx.SubscriptionFoundException
+import io.nekohasekai.sagernet.ktx.applyTabPressScale
 import io.nekohasekai.sagernet.ktx.alert
 import io.nekohasekai.sagernet.ktx.app
 import io.nekohasekai.sagernet.ktx.dp2px
@@ -80,17 +90,20 @@ import io.nekohasekai.sagernet.plugin.PluginManager
 import io.nekohasekai.sagernet.ui.profile.ChainSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.HttpSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.HysteriaSettingsActivity
-import io.nekohasekai.sagernet.ui.profile.MieruSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.NaiveSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.SSHSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.ShadowsocksSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.SocksSettingsActivity
-import io.nekohasekai.sagernet.ui.profile.TrojanGoSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.TrojanSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.TuicSettingsActivity
+import io.nekohasekai.sagernet.ui.profile.SnellSettingsActivity
+import io.nekohasekai.sagernet.ui.profile.OpenVPNSettingsActivity
+import io.nekohasekai.sagernet.ui.profile.OpenConnectSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.VMessSettingsActivity
 import io.nekohasekai.sagernet.ui.profile.WireGuardSettingsActivity
 import io.nekohasekai.sagernet.widget.QRCodeDialog
+import io.nekohasekai.sagernet.widget.ServiceButton
+import io.nekohasekai.sagernet.widget.TrafficSparklineView
 import io.nekohasekai.sagernet.widget.UndoSnackbarManager
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -121,7 +134,8 @@ class ConfigurationFragment @JvmOverloads constructor(
     PopupMenu.OnMenuItemClickListener,
     Toolbar.OnMenuItemClickListener,
     SearchView.OnQueryTextListener,
-    OnPreferenceDataStoreChangeListener {
+    OnPreferenceDataStoreChangeListener,
+    DashboardStatusDisplay {
 
     interface SelectCallback {
         fun returnProfile(profileId: Long)
@@ -131,7 +145,24 @@ class ConfigurationFragment @JvmOverloads constructor(
     lateinit var tabLayout: TabLayout
     lateinit var groupPager: ViewPager2
 
+    // Test dialog of the currently running batch test, if any (#1141):
+    // dismissed in onDestroy so rotation cannot leak its window.
+    private var activeTestDialog: AlertDialog? = null
+
     val alwaysShowAddress by lazy { DataStore.alwaysShowAddress }
+
+    // Dashboard status card (Task 2)
+    private lateinit var powerButton: ServiceButton
+    private lateinit var powerProgress: CircularProgressIndicator
+    private lateinit var powerRing: View
+    private lateinit var dashStatus: TextView
+    private lateinit var dashProfile: TextView
+    private lateinit var dashTx: TextView
+    private lateinit var dashRx: TextView
+    private lateinit var sparkline: TrafficSparklineView
+    private var lastServiceState = BaseService.State.Idle
+    private var lastProfileId = -1L
+    private var lastProfileName = ""
 
     fun getCurrentGroupFragment(): GroupFragment? {
         return try {
@@ -200,6 +231,29 @@ class ConfigurationFragment @JvmOverloads constructor(
 
         groupPager = view.findViewById(R.id.group_pager)
         tabLayout = view.findViewById(R.id.group_tab)
+
+        // Dashboard status card: hidden in profile-picker mode
+        view.findViewById<View>(R.id.dashboard_header).isVisible = !select
+        if (!select) {
+            powerButton = view.findViewById(R.id.power_button)
+            powerProgress = view.findViewById(R.id.power_progress)
+            powerRing = view.findViewById(R.id.power_ring)
+            dashStatus = view.findViewById(R.id.dash_status)
+            dashProfile = view.findViewById(R.id.dash_profile)
+            dashTx = view.findViewById(R.id.dash_tx)
+            dashRx = view.findViewById(R.id.dash_rx)
+            sparkline = view.findViewById(R.id.dash_sparkline)
+            powerButton.initProgress(powerProgress)
+            powerButton.setOnClickListener {
+                (activity as? MainActivity)?.toggleService()
+            }
+            dashStatus.setOnClickListener {
+                if (DataStore.serviceState.connected) testConnection()
+            }
+            (activity as? MainActivity)?.statusDisplay = this
+            changeState(DataStore.serviceState, animate = false)
+        }
+
         adapter = GroupPagerAdapter()
         ProfileManager.addListener(adapter)
         GroupManager.addListener(adapter)
@@ -212,8 +266,17 @@ class ConfigurationFragment @JvmOverloads constructor(
                 tab.text = adapter.groupList[position].displayName()
             }
             tab.view.setOnLongClickListener { // clear toast
+                val pos = tab.position
+                if (pos >= 0 && adapter.groupList.size > pos) {
+                    requireContext().startActivity(
+                        Intent(requireContext(), GroupSettingsActivity::class.java).apply {
+                            putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, adapter.groupList[pos].id)
+                        }
+                    )
+                }
                 true
             }
+            tab.view.applyTabPressScale()
         }.attach()
 
         toolbar.setOnClickListener {
@@ -262,6 +325,17 @@ class ConfigurationFragment @JvmOverloads constructor(
     }
 
     override fun onDestroy() {
+        // Dismiss the running test's dialog before the Activity window
+        // goes away, or it leaks (and the later cleanup dismiss crashes).
+        activeTestDialog?.let { dialog ->
+            try {
+                if (dialog.isShowing) dialog.dismiss()
+            } catch (e: IllegalArgumentException) {
+                Logs.w(e)
+            }
+        }
+        activeTestDialog = null
+
         DataStore.profileCacheStore.unregisterChangeListener(this)
 
         if (::adapter.isInitialized) {
@@ -270,6 +344,96 @@ class ConfigurationFragment @JvmOverloads constructor(
         }
 
         super.onDestroy()
+    }
+
+    override fun onDestroyView() {
+        (activity as? MainActivity)?.let {
+            if (it.statusDisplay == this) it.statusDisplay = null
+        }
+        super.onDestroyView()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::dashProfile.isInitialized) {
+            lastProfileId = -1L
+            changeState(DataStore.serviceState, animate = false)
+        }
+    }
+
+    override fun changeState(state: BaseService.State, animate: Boolean) {
+        if (!::powerButton.isInitialized) return
+        powerButton.changeState(state, lastServiceState, animate)
+        lastServiceState = state
+        val connected = state == BaseService.State.Connected
+        (powerRing.background.mutate() as GradientDrawable).setStroke(
+            dp2px(2),
+            requireContext().getColour(
+                if (connected) R.color.nkb_connected else R.color.nkb_card_stroke
+            )
+        )
+        dashStatus.text = getString(
+            when (state) {
+                BaseService.State.Connected -> R.string.vpn_connected
+                BaseService.State.Connecting -> R.string.connecting
+                BaseService.State.Stopping -> R.string.stopping
+                else -> R.string.not_connected
+            }
+        )
+        val profileId = DataStore.currentProfile.takeIf { it != 0L } ?: DataStore.selectedProxy
+        if (profileId != lastProfileId) {
+            lastProfileName = ProfileManager.getProfile(profileId)?.displayName() ?: ""
+            lastProfileId = profileId
+        }
+        dashProfile.text = lastProfileName
+        if (!connected) updateSpeed(0, 0)
+    }
+
+    override fun updateSpeed(txRate: Long, rxRate: Long) {
+        if (!::dashTx.isInitialized) return
+        dashTx.text = "▲  ${getString(R.string.speed, Formatter.formatFileSize(requireContext(), txRate))}"
+        dashRx.text = "▼  ${getString(R.string.speed, Formatter.formatFileSize(requireContext(), rxRate))}"
+        if (::sparkline.isInitialized) sparkline.push(txRate, rxRate)
+    }
+
+    private fun testConnection() {
+        val activity = activity as? MainActivity ?: return
+        dashStatus.isEnabled = false
+        dashStatus.text = getString(R.string.connection_test_testing)
+        runOnDefaultDispatcher {
+            try {
+                val elapsed = activity.urlTest()
+                onMainDispatcher {
+                    if (!isAdded) return@onMainDispatcher
+                    dashStatus.isEnabled = true
+                    if (DataStore.serviceState != BaseService.State.Connected) {
+                        dashStatus.text = getString(R.string.not_connected)
+                        return@onMainDispatcher
+                    }
+                    dashStatus.text = getString(
+                        if (DataStore.connectionTestURL.startsWith("https://")) {
+                            R.string.connection_test_available
+                        } else {
+                            R.string.connection_test_available_http
+                        }, elapsed
+                    )
+                }
+            } catch (e: Exception) {
+                Logs.w(e.toString())
+                onMainDispatcher {
+                    if (!isAdded) return@onMainDispatcher
+                    dashStatus.isEnabled = true
+                    if (DataStore.serviceState != BaseService.State.Connected) {
+                        dashStatus.text = getString(R.string.not_connected)
+                        return@onMainDispatcher
+                    }
+                    dashStatus.text = getString(R.string.vpn_connected)
+                    activity.snackbar(
+                        getString(R.string.connection_test_error, e.readableMessage)
+                    ).show()
+                }
+            }
+        }
     }
 
     override fun onKeyDown(ketCode: Int, event: KeyEvent): Boolean {
@@ -401,14 +565,6 @@ class ConfigurationFragment @JvmOverloads constructor(
                 startActivity(Intent(requireActivity(), TrojanSettingsActivity::class.java))
             }
 
-            R.id.action_new_trojan_go -> {
-                startActivity(Intent(requireActivity(), TrojanGoSettingsActivity::class.java))
-            }
-
-            R.id.action_new_mieru -> {
-                startActivity(Intent(requireActivity(), MieruSettingsActivity::class.java))
-            }
-
             R.id.action_new_naive -> {
                 startActivity(Intent(requireActivity(), NaiveSettingsActivity::class.java))
             }
@@ -419,6 +575,18 @@ class ConfigurationFragment @JvmOverloads constructor(
 
             R.id.action_new_tuic -> {
                 startActivity(Intent(requireActivity(), TuicSettingsActivity::class.java))
+            }
+
+            R.id.action_new_snell -> {
+                startActivity(Intent(requireActivity(), SnellSettingsActivity::class.java))
+            }
+
+            R.id.action_new_openvpn -> {
+                startActivity(Intent(requireActivity(), OpenVPNSettingsActivity::class.java))
+            }
+
+            R.id.action_new_openconnect -> {
+                startActivity(Intent(requireActivity(), OpenConnectSettingsActivity::class.java))
             }
 
             R.id.action_new_ssh -> {
@@ -514,6 +682,8 @@ class ConfigurationFragment @JvmOverloads constructor(
                                                 configurationList.remove(profile.id)
                                                 notifyItemRemoved(index)
                                             }
+                                            rebuildChainDisplayCache()
+                                            rebindChainsReferencing(profile.id)
                                         }
                                     }
                                     runOnDefaultDispatcher {
@@ -566,6 +736,8 @@ class ConfigurationFragment @JvmOverloads constructor(
                                                 configurationList.remove(profile.id)
                                                 notifyItemRemoved(index)
                                             }
+                                            rebuildChainDisplayCache()
+                                            rebindChainsReferencing(profile.id)
                                         }
                                     }
                                     runOnDefaultDispatcher {
@@ -608,12 +780,25 @@ class ConfigurationFragment @JvmOverloads constructor(
         lateinit var cancel: () -> Unit
         lateinit var minimize: () -> Unit
 
+        // ::cancel.isInitialized only compiles inside TestDialog itself
+        // (the backing field is private to this class).
+        fun isCancelInitialized(): Boolean = ::cancel.isInitialized
+
         val dialogStatus = AtomicInteger(0) // 1: hidden 2: cancelled
         var notification: ConnectionTestNotification? = null
 
         val results: MutableSet<ProxyEntity> = ConcurrentHashMap.newKeySet()
         var proxyN = 0
         val finishedN = AtomicInteger(0)
+
+        // Lines for profiles skipped by TCPing/ICMPing (TUIC, Hysteria,
+        // custom configs). They are listed in the dialog but never enter
+        // test.results, so their (never measured) state is never persisted.
+        val skippedText = SpannableStringBuilder()
+
+        init {
+            binding.nowTesting.movementMethod = ScrollingMovementMethod()
+        }
 
         fun update(profile: ProxyEntity) {
             if (dialogStatus.get() != 2) {
@@ -682,7 +867,47 @@ class ConfigurationFragment @JvmOverloads constructor(
                     append("\n")
                 }
 
-                binding.nowTesting.text = text
+                binding.nowTesting.text = SpannableStringBuilder(skippedText).append(text)
+                binding.progress.text = "$progress / $proxyN"
+            }
+        }
+
+        // Render a profile that TCPing/ICMPing skips (canTCPing() /
+        // canICMPing() false). Listed grey in the dialog and counted in
+        // the progress total, but never added to test.results and the
+        // profile object is never touched, so no fake state is persisted.
+        fun showSkipped(profile: ProxyEntity, unsupportedLabel: String) {
+            runOnMainDispatcher {
+                val context = context ?: return@runOnMainDispatcher
+                val progress = finishedN.addAndGet(1)
+                val status = dialogStatus.get()
+                notification?.updateNotification(
+                    progress,
+                    proxyN,
+                    progress >= proxyN || status == 2
+                )
+                if (status >= 1) return@runOnMainDispatcher
+                if (!isAdded) return@runOnMainDispatcher
+
+                val text = SpannableStringBuilder().apply {
+                    append("\n" + profile.displayName())
+                    append("\n")
+                    append(
+                        profile.displayType(),
+                        ForegroundColorSpan(context.getProtocolColor(profile.type)),
+                        SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    append(" ")
+                    append(
+                        unsupportedLabel,
+                        ForegroundColorSpan(context.getColorAttr(android.R.attr.textColorSecondary)),
+                        SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    append("\n")
+                }
+
+                skippedText.append(text)
+                binding.nowTesting.text = skippedText
                 binding.progress.text = "$progress / $proxyN"
             }
         }
@@ -694,25 +919,35 @@ class ConfigurationFragment @JvmOverloads constructor(
     fun pingTest(icmpPing: Boolean) {
         if (DataStore.runningTest) return else DataStore.runningTest = true
         val test = TestDialog()
-        val dialog = test.builder.show()
+        // The dialog is shown lazily inside mainJob, after the split:
+        // when nothing is testable there is no dialog to flash, only a toast.
+        var dialog: AlertDialog? = null
         val testJobs = mutableListOf<Job>()
         val group = DataStore.currentGroup()
+        val unsupportedLabel = getString(if (icmpPing) R.string.connection_test_icmp_ping_unsupported else R.string.connection_test_tcp_ping_unsupported)
+        val noTestableToast = getString(if (icmpPing) R.string.connection_test_no_testable_nodes_icmp else R.string.connection_test_no_testable_nodes_tcp)
+        val emptyGroupToast = getString(R.string.connection_test_empty_group)
 
-        val mainJob = runOnDefaultDispatcher {
-            val profilesList = SagerDatabase.proxyDao.getByGroup(group.id).filter {
-                if (icmpPing) {
-                    if (it.requireBean().canICMPing()) {
-                        return@filter true
-                    }
-                } else {
-                    if (it.requireBean().canTCPing()) {
-                        return@filter true
-                    }
-                }
-                return@filter false
+        val mainJob = runOnLifecycleDispatcher {
+            val allProfiles = SagerDatabase.proxyDao.getByGroup(group.id)
+            val (testableProfiles, skippedProfiles) = allProfiles.partition {
+                if (icmpPing) it.requireBean().canICMPing() else it.requireBean().canTCPing()
             }
-            test.proxyN = profilesList.size
-            val profiles = ConcurrentLinkedQueue(profilesList)
+            if (testableProfiles.isEmpty()) {
+                onMainDispatcher {
+                    if (isAdded) snackbar(if (skippedProfiles.isNotEmpty()) noTestableToast else emptyGroupToast).show()
+                }
+                DataStore.runningTest = false
+                return@runOnLifecycleDispatcher
+            }
+            // mainJob runs on Dispatchers.Default: show the dialog on Main.
+        onMainDispatcher {
+            dialog = test.builder.show()
+            activeTestDialog = dialog
+        }
+            test.proxyN = testableProfiles.size + skippedProfiles.size
+            skippedProfiles.forEach { test.showSkipped(it, unsupportedLabel) }
+            val profiles = ConcurrentLinkedQueue(testableProfiles)
             repeat(DataStore.connectionTestConcurrent) {
                 testJobs.add(launch(Dispatchers.IO) {
                     while (isActive) {
@@ -805,29 +1040,50 @@ class ConfigurationFragment @JvmOverloads constructor(
             }
         }
         test.cancel = {
-            test.dialogStatus.set(2)
-            dialog.dismiss()
-            runOnDefaultDispatcher {
-                mainJob.cancel()
-                testJobs.forEach { it.cancel() }
-                test.results.forEach {
+            if (test.dialogStatus.getAndSet(2) != 2) {
+                test.notification?.cancel()
+                dialog?.let { dialog ->
                     try {
-                        ProfileManager.updateProfile(it)
-                    } catch (e: Exception) {
+                        if (dialog.isShowing) dialog.dismiss()
+                    } catch (e: IllegalArgumentException) {
                         Logs.w(e)
                     }
                 }
-                GroupManager.postReload(DataStore.currentGroupId())
-                DataStore.runningTest = false
+                if (activeTestDialog === dialog) activeTestDialog = null
+                runOnDefaultDispatcher {
+                    mainJob.cancel()
+                    testJobs.forEach { it.cancel() }
+                    test.results.forEach {
+                        try {
+                            ProfileManager.updateProfile(it)
+                        } catch (e: Exception) {
+                            Logs.w(e)
+                        }
+                    }
+                    GroupManager.postReload(DataStore.currentGroupId())
+                    DataStore.runningTest = false
+                }
             }
         }
         test.minimize = {
-            test.dialogStatus.set(1)
-            test.notification = ConnectionTestNotification(
-                dialog.context,
-                "[${group.displayName()}] ${getString(R.string.connection_test)}"
-            )
-            dialog.hide()
+            dialog?.let { dialog ->
+                test.dialogStatus.set(1)
+                test.notification = ConnectionTestNotification(
+                    dialog.context,
+                    "[${group.displayName()}] ${getString(R.string.connection_test)}"
+                )
+                dialog.hide()
+            }
+        }
+        // The batch job must not outlive this fragment (#1141): when
+        // the fragment is destroyed (e.g. rotation) lifecycleScope
+        // cancels mainJob, and this runs the same cleanup as the
+        // dialog's Cancel button. test.cancel is idempotent, so the
+        // normal-completion path cannot clean up twice.
+        mainJob.invokeOnCompletion {
+            if (test.isCancelInitialized()) {
+                runOnMainDispatcher { test.cancel() }
+            }
         }
     }
 
@@ -836,10 +1092,11 @@ class ConfigurationFragment @JvmOverloads constructor(
         if (DataStore.runningTest) return else DataStore.runningTest = true
         val test = TestDialog()
         val dialog = test.builder.show()
+        activeTestDialog = dialog
         val testJobs = mutableListOf<Job>()
         val group = DataStore.currentGroup()
 
-        val mainJob = runOnDefaultDispatcher {
+        val mainJob = runOnLifecycleDispatcher {
             val profilesList = SagerDatabase.proxyDao.getByGroup(group.id)
             test.proxyN = profilesList.size
             val profiles = ConcurrentLinkedQueue(profilesList)
@@ -874,20 +1131,27 @@ class ConfigurationFragment @JvmOverloads constructor(
             }
         }
         test.cancel = {
-            test.dialogStatus.set(2)
-            dialog.dismiss()
-            runOnDefaultDispatcher {
-                mainJob.cancel()
-                testJobs.forEach { it.cancel() }
-                test.results.forEach {
-                    try {
-                        ProfileManager.updateProfile(it)
-                    } catch (e: Exception) {
-                        Logs.w(e)
-                    }
+            if (test.dialogStatus.getAndSet(2) != 2) {
+                test.notification?.cancel()
+                try {
+                    if (dialog.isShowing) dialog.dismiss()
+                } catch (e: IllegalArgumentException) {
+                    Logs.w(e)
                 }
-                GroupManager.postReload(DataStore.currentGroupId())
-                DataStore.runningTest = false
+                if (activeTestDialog === dialog) activeTestDialog = null
+                runOnDefaultDispatcher {
+                    mainJob.cancel()
+                    testJobs.forEach { it.cancel() }
+                    test.results.forEach {
+                        try {
+                            ProfileManager.updateProfile(it)
+                        } catch (e: Exception) {
+                            Logs.w(e)
+                        }
+                    }
+                    GroupManager.postReload(DataStore.currentGroupId())
+                    DataStore.runningTest = false
+                }
             }
         }
         test.minimize = {
@@ -897,6 +1161,12 @@ class ConfigurationFragment @JvmOverloads constructor(
                 "[${group.displayName()}] ${getString(R.string.connection_test)}"
             )
             dialog.hide()
+        }
+        // Same lifecycle cleanup as pingTest (#1141).
+        mainJob.invokeOnCompletion {
+            if (test.isCancelInitialized()) {
+                runOnMainDispatcher { test.cancel() }
+            }
         }
     }
 
@@ -1235,6 +1505,49 @@ class ConfigurationFragment @JvmOverloads constructor(
             var configurationIdList: MutableList<Long> = mutableListOf()
             val configurationList = HashMap<Long, ProxyEntity>()
 
+            // #1212: chain ID -> "nodeA → nodeB" display string. Same-group node
+            // names come from the in-memory configurationList; nodes in another
+            // group are resolved with one batched DB lookup per rebuild (never
+            // per scroll). Rebuilt whenever any profile in this group changes,
+            // so a node rename/delete refreshes every chain that references it.
+            val chainDisplayCache = mutableMapOf<Long, String>()
+
+            fun rebuildChainDisplayCache() {
+                chainDisplayCache.clear()
+                val nameById = configurationList.mapValues { it.value.displayName() }.toMutableMap()
+                // Cross-group nodes: a chain may reference nodes in another
+                // group, which are not in this list's in-memory map. Resolve
+                // just those IDs with one batched lookup, once per rebuild —
+                // scrolling still only reads this cache.
+                val chainProxies = configurationList.values
+                    .filter { it.type == ProxyEntity.TYPE_CHAIN }
+                    .mapNotNull { it.chainBean?.proxies }
+                val missingIds = collectMissingChainNodeIds(chainProxies, nameById)
+                if (missingIds.isNotEmpty()) {
+                    for (profile in ProfileManager.getProfiles(missingIds.toList())) {
+                        nameById[profile.id] = profile.displayName()
+                    }
+                }
+                for ((id, profile) in configurationList) {
+                    if (profile.type == ProxyEntity.TYPE_CHAIN) {
+                        val proxies = profile.chainBean?.proxies ?: continue
+                        chainDisplayCache[id] = resolveChainDisplayNames(proxies, nameById)
+                    }
+                }
+            }
+
+            fun rebindChainsReferencing(profileId: Long) {
+                for ((chainId, chain) in configurationList) {
+                    if (chainId == profileId) continue
+                    if (chain.type == ProxyEntity.TYPE_CHAIN &&
+                        chain.chainBean?.proxies?.contains(profileId) == true
+                    ) {
+                        val chainIndex = configurationIdList.indexOf(chainId)
+                        if (chainIndex >= 0) notifyItemChanged(chainIndex)
+                    }
+                }
+            }
+
             private fun getItem(profileId: Long): ProxyEntity {
                 var profile = configurationList[profileId]
                 if (profile == null) {
@@ -1264,7 +1577,8 @@ class ConfigurationFragment @JvmOverloads constructor(
 
             override fun onBindViewHolder(holder: ConfigurationHolder, position: Int) {
                 try {
-                    holder.bind(getItemAt(position))
+                    val profile = getItemAt(position)
+                    holder.bind(profile, chainDisplay = chainDisplayCache[profile.id])
                 } catch (ignored: NullPointerException) { // when group deleted
                 }
             }
@@ -1285,7 +1599,8 @@ class ConfigurationFragment @JvmOverloads constructor(
                 configurationIdList.addAll(configurationList.filter {
                     it.value.displayName().lowercase().contains(lower) ||
                             it.value.displayType().lowercase().contains(lower) ||
-                            it.value.displayAddress().lowercase().contains(lower)
+                            it.value.displayAddress().lowercase().contains(lower) ||
+                            (chainDisplayCache[it.key] ?: "").lowercase().contains(lower)
                 }.keys)
                 notifyDataSetChanged()
             }
@@ -1350,6 +1665,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                     val pos = itemCount
                     configurationList[profile.id] = profile
                     configurationIdList.add(profile.id)
+                    rebuildChainDisplayCache()
                     notifyItemInserted(pos)
                 }
             }
@@ -1363,7 +1679,9 @@ class ConfigurationFragment @JvmOverloads constructor(
                         undoManager.flush()
                     }
                     configurationList[profile.id] = profile
+                    rebuildChainDisplayCache()
                     notifyItemChanged(index)
+                    rebindChainsReferencing(profile.id)
                     //
                     val oldProfile = configurationList[profile.id]
                     if (noTraffic && oldProfile != null) {
@@ -1388,7 +1706,10 @@ class ConfigurationFragment @JvmOverloads constructor(
                             ?.let { configurationListView.getChildViewHolder(it) } as ConfigurationHolder?
                         if (holder != null) {
                             onMainDispatcher {
-                                holder.bind(holder.entity, data)
+                                holder.bind(
+                                    holder.entity, data,
+                                    chainDisplay = chainDisplayCache[holder.entity.id]
+                                )
                             }
                         }
                     }
@@ -1406,6 +1727,8 @@ class ConfigurationFragment @JvmOverloads constructor(
                     configurationIdList.removeAt(index)
                     configurationList.remove(profileId)
                     notifyItemRemoved(index)
+                    rebuildChainDisplayCache()
+                    rebindChainsReferencing(profileId)
                 }
             }
 
@@ -1440,6 +1763,7 @@ class ConfigurationFragment @JvmOverloads constructor(
 
                 configurationList.clear()
                 configurationList.putAll(newProfiles.associateBy { it.id })
+                rebuildChainDisplayCache()
                 val newProfileIds = newProfiles.map { it.id }
 
                 var selectedProfileIndex = -1
@@ -1473,20 +1797,38 @@ class ConfigurationFragment @JvmOverloads constructor(
 
             lateinit var entity: ProxyEntity
 
+            val card: MaterialCardView = view as MaterialCardView
             val profileName: TextView = view.findViewById(R.id.profile_name)
             val profileType: TextView = view.findViewById(R.id.profile_type)
             val profileAddress: TextView = view.findViewById(R.id.profile_address)
             val profileStatus: TextView = view.findViewById(R.id.profile_status)
 
             val trafficText: TextView = view.findViewById(R.id.traffic_text)
-            val selectedView: LinearLayout = view.findViewById(R.id.selected_view)
             val editButton: ImageView = view.findViewById(R.id.edit)
             val shareLayout: LinearLayout = view.findViewById(R.id.share)
             val shareLayer: LinearLayout = view.findViewById(R.id.share_layer)
             val shareButton: ImageView = view.findViewById(R.id.shareIcon)
             val removeButton: ImageView = view.findViewById(R.id.remove)
 
-            fun bind(proxyEntity: ProxyEntity, trafficData: TrafficData? = null) {
+            private fun setLatencyPill(@ColorRes colorRes: Int) {
+                val color = requireContext().getColour(colorRes)
+                profileStatus.background =
+                    ContextCompat.getDrawable(requireContext(), R.drawable.bg_pill)
+                profileStatus.backgroundTintList =
+                    ColorStateList.valueOf(ColorUtils.setAlphaComponent(color, 46))
+                profileStatus.setTextColor(color)
+            }
+
+            private fun clearLatencyPill() {
+                profileStatus.background = null
+                profileStatus.backgroundTintList = null
+            }
+
+            fun bind(
+                proxyEntity: ProxyEntity,
+                trafficData: TrafficData? = null,
+                chainDisplay: String? = null,
+            ) {
                 val pf = parentFragment as? ConfigurationFragment ?: return
 
                 entity = proxyEntity
@@ -1504,13 +1846,15 @@ class ConfigurationFragment @JvmOverloads constructor(
                                 update = DataStore.selectedProxy != proxyEntity.id
                                 lastSelected = DataStore.selectedProxy
                                 DataStore.selectedProxy = proxyEntity.id
-                                onMainDispatcher {
-                                    selectedView.visibility = View.VISIBLE
-                                }
                             }
 
                             if (update) {
-                                ProfileManager.postUpdate(lastSelected)
+                                // Refresh both cards: the old one clears its blue border,
+                                // the new one draws it. Posting only the old id left the
+                                // new card stale until the next page switch rebind.
+                                for (id in selectionRefreshIds(lastSelected, proxyEntity.id)) {
+                                    ProfileManager.postUpdate(id)
+                                }
                                 if (DataStore.serviceState.canStop && reloadAccess.tryLock()) {
                                     SagerNet.reloadService()
                                     reloadAccess.unlock()
@@ -1549,12 +1893,24 @@ class ConfigurationFragment @JvmOverloads constructor(
                     )
                 }
 
-                var address = proxyEntity.displayAddress()
-                if (showTraffic && address.length >= 30) {
+                // #1212: a chain shows the names of the nodes it chains.
+                // chainDisplay is non-null for chains (resolved by the adapter
+                // from the cache and passed into bind); null for other profiles.
+                var address = if (chainDisplay != null) {
+                    chainDisplay
+                } else {
+                    proxyEntity.displayAddress()
+                }
+                // Chains keep their full node-name string so it can wrap
+                // to a second line instead of being cut off; the 30-char
+                // truncation only applies to regular (non-chain) profiles.
+                if (chainDisplay == null && showTraffic && address.length >= 30) {
                     address = address.substring(0, 27) + "..."
                 }
 
-                if (proxyEntity.requireBean().name.isBlank() || !pf.alwaysShowAddress) {
+                if (chainDisplay == null &&
+                    (proxyEntity.requireBean().name.isBlank() || !pf.alwaysShowAddress)
+                ) {
                     address = ""
                 }
 
@@ -1563,6 +1919,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                     (!showTraffic || proxyEntity.status <= 0) && address.isBlank()
 
                 if (proxyEntity.status <= 0) {
+                    clearLatencyPill()
                     if (showTraffic) {
                         profileStatus.text = trafficText.text
                         profileStatus.setTextColor(requireContext().getColorAttr(android.R.attr.textColorSecondary))
@@ -1572,9 +1929,15 @@ class ConfigurationFragment @JvmOverloads constructor(
                     }
                 } else if (proxyEntity.status == 1) {
                     profileStatus.text = getString(R.string.available, proxyEntity.ping)
-                    profileStatus.setTextColor(requireContext().getColour(R.color.material_green_500))
+                    setLatencyPill(
+                        when {
+                            proxyEntity.ping < 100 -> R.color.nkb_latency_good
+                            proxyEntity.ping < 300 -> R.color.nkb_latency_mid
+                            else -> R.color.nkb_latency_bad
+                        }
+                    )
                 } else {
-                    profileStatus.setTextColor(requireContext().getColour(R.color.material_red_500))
+                    setLatencyPill(R.color.nkb_latency_bad)
                     if (proxyEntity.status == 2) {
                         profileStatus.text = proxyEntity.error
                     }
@@ -1616,16 +1979,19 @@ class ConfigurationFragment @JvmOverloads constructor(
                     shareLayout.isGone = true
                 }
 
-                runOnDefaultDispatcher {
-                    val selected = (selectedItem?.id ?: DataStore.selectedProxy) == proxyEntity.id
-                    val started =
-                        selected && DataStore.serviceState.started && DataStore.currentProfile == proxyEntity.id
-                    onMainDispatcher {
-                        editButton.isEnabled = !started
-                        removeButton.isEnabled = !started
-                        selectedView.visibility = if (selected) View.VISIBLE else View.INVISIBLE
-                    }
+                // Apply the selected state synchronously: the async block below can
+                // run after this holder is rebound to another profile.
+                val boundId = proxyEntity.id
+                val selected = (selectedItem?.id ?: DataStore.selectedProxy) == proxyEntity.id
+                val started =
+                    selected && DataStore.serviceState.started && DataStore.currentProfile == proxyEntity.id
+                editButton.isEnabled = !started
+                removeButton.isEnabled = !started
+                card.strokeColor = requireContext().getColour(
+                    if (selected) R.color.nkb_accent else R.color.nkb_card_stroke
+                )
 
+                runOnDefaultDispatcher {
                     fun showShare(anchor: View) {
                         val popup = PopupMenu(requireContext(), anchor)
                         popup.menuInflater.inflate(R.menu.profile_share_menu, popup.menu)
@@ -1654,6 +2020,7 @@ class ConfigurationFragment @JvmOverloads constructor(
 
                     if (!(select || proxyEntity.type == ProxyEntity.TYPE_CHAIN)) {
                         onMainDispatcher {
+                            if (entity.id != boundId) return@onMainDispatcher
                             shareLayer.setBackgroundColor(Color.TRANSPARENT)
                             shareButton.setImageResource(R.drawable.ic_social_share)
                             shareButton.setColorFilter(Color.GRAY)

@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [ProxyGroup::class, ProxyEntity::class, RuleEntity::class],
-    version = 6,
+    version = 8,
     autoMigrations = [
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
@@ -34,6 +34,12 @@ abstract class SagerDatabase : RoomDatabase() {
             SagerNet.application.getDatabasePath(Key.DB_PROFILE).parentFile?.mkdirs()
             Room.databaseBuilder(SagerNet.application, SagerDatabase::class.java, Key.DB_PROFILE)
 //                .addMigrations(*SagerDatabase_Migrations.build())
+                // v1.4.29: manual 6 -> 7 (was an AutoMigration; see
+                // Migration6To7.kt) and 7 -> 8 migrations (drop the two
+                // removed protocols' columns and their stale rows). Do not
+                // add an AutoMigration(7, 8): Room cannot auto-migrate
+                // a row delete plus column drops.
+                .addMigrations(MIGRATION_6_7, MIGRATION_7_8)
                 .setJournalMode(JournalMode.TRUNCATE)
                 .allowMainThreadQueries()
                 .enableMultiInstanceInvalidation()

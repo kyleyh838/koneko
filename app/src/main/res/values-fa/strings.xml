@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">NekoBox</string>
-    <string name="app_name_long" translatable="false">NekoBox for Android</string>
+    <string name="app_name" translatable="false">KoNeko</string>
+    <string name="app_name_long" translatable="false">KoNeko for Android</string>
     <string name="app_desc">مجموعه ابزار جامع پراکسی برای اندروید، نوشته‌شده با کاتلین.</string>
     <string name="project">پروژه</string>
     <string name="github">کد منبع</string>
@@ -19,7 +19,7 @@
     <string name="quick_toggle">تغییر وضعیت</string>
     <string name="quick_enable">فعال‌سازی</string>
     <string name="quick_disable">غیرفعال‌سازی</string>
-    <string name="tile_title">سوییچر</string>
+    <string name="tile_title">KoNeko</string>
     <string name="menu_traffic">ترافیک</string>
     <string name="menu_dashboard">sing-box تنظیمات</string>
     <!-- externel -->
@@ -207,8 +207,6 @@
     <string name="action_shadowsocksr" translatable="false">ShadowsocksR</string>
     <string name="action_vmess" translatable="false">VMess</string>
     <string name="action_trojan" translatable="false">Trojan</string>
-    <string name="action_trojan_go" translatable="false">Trojan Go</string>
-    <string name="action_mieru" translatable="false">Mieru</string>
     <string name="action_naive" translatable="false">Naïve</string>
     <string name="action_hysteria" translatable="false">Hysteria</string>
     <string name="action_ssh" translatable="false">SSH</string>
@@ -486,7 +484,6 @@
     <string name="domain_strategy_for_remote">راهبرد دامنه برای ارتباط از راه دور</string>
     <string name="domain_strategy_for_direct">راهبرد دامنه برای ارتباط مستقیم</string>
     <string name="domain_strategy_for_server">راهبرد دامنه برای نشانی‌های سرور</string>
-    <string name="show_bottom_bar">نمایش نوار پایین مانند SagerNet</string>
     <string name="utls_fingerprint">اثر انگشت uTLS</string>
     <string name="custom_outbound_json">خروجی سفارشی JSON</string>
     <string name="custom_config_json">پراکسی سفارشی JSON</string>

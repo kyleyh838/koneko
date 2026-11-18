@@ -7,13 +7,16 @@ import io.nekohasekai.sagernet.fmt.http.parseHttp
 import io.nekohasekai.sagernet.fmt.hysteria.parseHysteria1
 import io.nekohasekai.sagernet.fmt.hysteria.parseHysteria2
 import io.nekohasekai.sagernet.fmt.naive.parseNaive
+import io.nekohasekai.sagernet.fmt.openconnect.parseOpenConnect
+import io.nekohasekai.sagernet.fmt.openvpn.parseOpenVPN
 import io.nekohasekai.sagernet.fmt.parseUniversal
 import io.nekohasekai.sagernet.fmt.shadowsocks.parseShadowsocks
+import io.nekohasekai.sagernet.fmt.snell.parseSnell
 import io.nekohasekai.sagernet.fmt.socks.parseSOCKS
 import io.nekohasekai.sagernet.fmt.trojan.parseTrojan
 import io.nekohasekai.sagernet.fmt.tuic.parseTuic
-import io.nekohasekai.sagernet.fmt.trojan_go.parseTrojanGo
 import io.nekohasekai.sagernet.fmt.v2ray.parseV2Ray
+import io.nekohasekai.sagernet.fmt.wireguard.parseWireGuardLink
 import moe.matsuri.nb4a.proxy.anytls.parseAnytls
 import moe.matsuri.nb4a.utils.JavaUtil.gson
 import moe.matsuri.nb4a.utils.Util
@@ -168,13 +171,6 @@ suspend fun parseProxies(text: String): List<AbstractBean> {
             }.onFailure {
                 Logs.w(it)
             }
-        } else if (startsWith("trojan-go://")) {
-            Logs.d("Try parse trojan-go link: $this")
-            runCatching {
-                entities.add(parseTrojanGo(this))
-            }.onFailure {
-                Logs.w(it)
-            }
         } else if (startsWith("ss://")) {
             Logs.d("Try parse shadowsocks link: $this")
             runCatching {
@@ -210,10 +206,38 @@ suspend fun parseProxies(text: String): List<AbstractBean> {
             }.onFailure {
                 Logs.w(it)
             }
+        } else if (startsWith("snell://")) {
+            Logs.d("Try parse snell link: $this")
+            runCatching {
+                entities.add(parseSnell(this))
+            }.onFailure {
+                Logs.w(it)
+            }
+        } else if (startsWith("openvpn://")) {
+            Logs.d("Try parse openvpn link: $this")
+            runCatching {
+                entities.add(parseOpenVPN(this))
+            }.onFailure {
+                Logs.w(it)
+            }
+        } else if (startsWith("openconnect://")) {
+            Logs.d("Try parse openconnect link: $this")
+            runCatching {
+                entities.add(parseOpenConnect(this))
+            }.onFailure {
+                Logs.w(it)
+            }
         } else if (startsWith("anytls://")) {
             Logs.d("Try parse anytls link: $this")
             runCatching {
                 entities.add(parseAnytls(this))
+            }.onFailure {
+                Logs.w(it)
+            }
+        } else if (startsWith("wireguard://")) {
+            Logs.d("Try parse wireguard link: $this")
+            runCatching {
+                entities.add(parseWireGuardLink(this))
             }.onFailure {
                 Logs.w(it)
             }

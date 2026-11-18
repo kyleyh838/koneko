@@ -27,6 +27,69 @@ object SingBoxOptionsUtil {
 
 }
 
+/**
+ * A legacy DNS server address string (the old `address` field) split into
+ * the sing-box 1.14 server fields. Bare hosts are plain UDP.
+ */
+data class DnsServerAddress(
+    val type: String,
+    val server: String? = null,
+    val serverPort: Int? = null,
+    val path: String? = null,
+    val iface: String? = null,
+)
+
+fun parseDnsServerAddress(raw: String): DnsServerAddress {
+    val address = raw.trim()
+    if (address == "local") return DnsServerAddress("local")
+    if (address == "fakeip") return DnsServerAddress("fakeip")
+    if (address.startsWith("dhcp://")) {
+        val rest = address.removePrefix("dhcp://")
+        return if (rest.isEmpty() || rest == "auto") DnsServerAddress("dhcp")
+        else DnsServerAddress("dhcp", iface = rest)
+    }
+    if (address.startsWith("mdns://")) {
+        val rest = address.removePrefix("mdns://")
+        return if (rest.isEmpty()) DnsServerAddress("mdns")
+        else DnsServerAddress("mdns", iface = rest)
+    }
+    val scheme: String
+    val rest: String
+    if (address.contains("://")) {
+        scheme = address.substringBefore("://").lowercase()
+        rest = address.substringAfter("://")
+    } else {
+        scheme = "udp"
+        rest = address
+    }
+    val type = when (scheme) {
+        "udp", "tcp", "tls", "https", "quic", "h3" -> scheme
+        else -> "udp"
+    }
+    val pathSplit = rest.split("/", limit = 2)
+    val hostPort = pathSplit[0]
+    val path = if (pathSplit.size > 1) "/${pathSplit[1]}" else null
+    val (host, port) = splitHostPort(hostPort)
+    return DnsServerAddress(type, host.ifEmpty { null }, port, path)
+}
+
+private fun splitHostPort(hostPort: String): Pair<String, Int?> {
+    if (hostPort.startsWith("[")) {
+        val end = hostPort.indexOf(']')
+        if (end >= 0) {
+            val host = hostPort.substring(1, end)
+            val port = hostPort.substring(end + 1).removePrefix(":").toIntOrNull()
+            return host to port
+        }
+        return hostPort to null
+    }
+    if (hostPort.count { it == ':' } == 1) {
+        val (host, port) = hostPort.split(":", limit = 2)
+        return host to port.toIntOrNull()
+    }
+    return hostPort to null
+}
+
 fun SingBoxOptions.DNSRule_DefaultOptions.makeSingBoxRule(list: List<String>) {
     rule_set = mutableListOf<String>()
     domain = mutableListOf<String>()

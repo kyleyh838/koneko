@@ -76,7 +76,8 @@
             android:name="io.nekohasekai.sagernet.ui.MainActivity"
             android:configChanges="uiMode"
             android:exported="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -130,10 +131,10 @@
                 <data android:scheme="sock5" />
                 <data android:scheme="vmess" />
                 <data android:scheme="trojan" />
-                <data android:scheme="trojan-go" />
                 <data android:scheme="naive+https" />
                 <data android:scheme="naive+quic" />
                 <data android:scheme="hysteria" />
+                <data android:scheme="wireguard" />
 
             </intent-filter>
 
@@ -164,12 +165,6 @@
             android:name="io.nekohasekai.sagernet.ui.profile.TrojanSettingsActivity"
             android:configChanges="uiMode" />
         <activity
-            android:name="io.nekohasekai.sagernet.ui.profile.TrojanGoSettingsActivity"
-            android:configChanges="uiMode" />
-        <activity
-            android:name="io.nekohasekai.sagernet.ui.profile.MieruSettingsActivity"
-            android:configChanges="uiMode" />
-        <activity
             android:name="io.nekohasekai.sagernet.ui.profile.NaiveSettingsActivity"
             android:configChanges="uiMode" />
         <activity
@@ -183,6 +178,15 @@
             android:configChanges="uiMode" />
         <activity
             android:name="io.nekohasekai.sagernet.ui.profile.TuicSettingsActivity"
+            android:configChanges="uiMode" />
+        <activity
+            android:name="io.nekohasekai.sagernet.ui.profile.SnellSettingsActivity"
+            android:configChanges="uiMode" />
+        <activity
+            android:name="io.nekohasekai.sagernet.ui.profile.OpenVPNSettingsActivity"
+            android:configChanges="uiMode" />
+        <activity
+            android:name="io.nekohasekai.sagernet.ui.profile.OpenConnectSettingsActivity"
             android:configChanges="uiMode" />
         <activity
             android:name="io.nekohasekai.sagernet.ui.profile.ChainSettingsActivity"

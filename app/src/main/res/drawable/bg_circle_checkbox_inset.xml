@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular checkbox button with a 13dp gap from the row's right edge.
+     CompoundButton.onDraw draws its button drawable flush against the view edge
+     (AOSP: left = getWidth() - drawableWidth in RTL, padding is never subtracted),
+     so the gap has to come from the drawable itself, not from padding. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/bg_circle_checkbox"
+    android:insetRight="13dp" />

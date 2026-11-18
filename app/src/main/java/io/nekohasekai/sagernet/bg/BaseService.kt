@@ -1,11 +1,15 @@
 package io.nekohasekai.sagernet.bg
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.*
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import io.nekohasekai.sagernet.Action
 import io.nekohasekai.sagernet.BootReceiver
 import io.nekohasekai.sagernet.R
@@ -48,9 +52,34 @@ class BaseService {
 
         val receiver = broadcastReceiver { ctx, intent ->
             when (intent.action) {
-                Intent.ACTION_SHUTDOWN -> service.persistStats()
                 Action.RELOAD -> service.reload()
                 // Action.SWITCH_WAKE_LOCK -> runOnDefaultDispatcher { service.switchWakeLock() }
+                Action.RESET_UPSTREAM_CONNECTIONS -> runOnDefaultDispatcher {
+                    Libcore.resetAllConnections(true)
+                    runOnMainDispatcher {
+                        Util.collapseStatusBar(ctx)
+                        Toast.makeText(ctx, "Reset upstream connections done", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+
+                else -> service.stopRunner()
+            }
+        }
+
+        // System broadcasts arrive from system_server, which does not
+        // hold this app's signature-level SERVICE permission, so they
+        // can never reach the receiver above (#1142). This second
+        // receiver is registered without a broadcast permission and
+        // only listens for system actions.
+        val systemReceiver = broadcastReceiver { _, intent ->
+            when (intent.action) {
+                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
+                    if (DataStore.wakeResetConnections) {
+                        Libcore.resetAllConnections(true)
+                    }
+                }
+
                 PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         if (SagerNet.power.isDeviceIdleMode) {
@@ -64,22 +93,20 @@ class BaseService {
                     }
                 }
 
-                Action.RESET_UPSTREAM_CONNECTIONS -> runOnDefaultDispatcher {
-                    Libcore.resetAllConnections(true)
-                    runOnMainDispatcher {
-                        Util.collapseStatusBar(ctx)
-                        Toast.makeText(ctx, "Reset upstream connections done", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                }
-
-                else -> service.stopRunner()
+                Intent.ACTION_SHUTDOWN -> service.persistStats()
             }
         }
         var closeReceiverRegistered = false
+        var systemReceiverRegistered = false
 
         val binder = Binder(this)
-        var connectingJob: Job? = null
+        // Serializes the start/stop lifecycle (C3). The start sequence holds
+        // the guard's lock for its whole duration, and a stop cancels an
+        // in-flight start before cleaning up, so the two can never
+        // interleave. Replaces the old `connectingJob` field, which was
+        // declared but never assigned, making the old "cancel first" step
+        // in stopRunner dead code.
+        val lifecycleGuard = ServiceLifecycleGuard()
 
         fun changeState(s: State, msg: String? = null) {
             if (state == s && msg == null) return
@@ -244,16 +271,24 @@ class BaseService {
             data.changeState(State.Stopping)
 
             runOnMainDispatcher {
-                data.connectingJob?.cancelAndJoin() // ensure stop connecting first
-                // we use a coroutineScope here to allow clean-up in parallel
-                coroutineScope {
-                    killProcesses()
-                    val data = data
-                    if (data.closeReceiverRegistered) {
-                        unregisterReceiver(data.receiver)
-                        data.closeReceiverRegistered = false
+                // Cancel an in-flight start first and wait for it to unwind;
+                // the start sequence holds the guard's lock, so the clean-up
+                // below can never run concurrently with it.
+                data.lifecycleGuard.runStop {
+                    // we use a coroutineScope here to allow clean-up in parallel
+                    coroutineScope {
+                        killProcesses()
+                        val data = data
+                        if (data.closeReceiverRegistered) {
+                            unregisterReceiver(data.receiver)
+                            data.closeReceiverRegistered = false
+                        }
+                        if (data.systemReceiverRegistered) {
+                            unregisterReceiver(data.systemReceiver)
+                            data.systemReceiverRegistered = false
+                        }
+                        data.proxy = null
                     }
-                    data.proxy = null
                 }
 
                 // change the state
@@ -313,7 +348,12 @@ class BaseService {
             DataStore.baseService = this
 
             val data = data
-            if (data.state != State.Stopped) return Service.START_NOT_STICKY
+            // START_STICKY (C2): if the system kills the :bg process, the
+            // service is restarted with a null intent so the VPN comes back
+            // up instead of silently leaking traffic onto the direct
+            // connection. (The old START_NOT_STICKY left the user unprotected
+            // after a low-memory kill, with no notice.)
+            if (data.state != State.Stopped) return Service.START_STICKY
             val profile = SagerDatabase.proxyDao.getById(DataStore.selectedProxy)
             this as Context
             if (profile == null) { // gracefully shutdown: https://stackoverflow.com/q/47337857/2245107
@@ -328,12 +368,8 @@ class BaseService {
             if (!data.closeReceiverRegistered) {
                 val filter = IntentFilter().apply {
                     addAction(Action.RELOAD)
-                    addAction(Intent.ACTION_SHUTDOWN)
                     addAction(Action.CLOSE)
                     // addAction(Action.SWITCH_WAKE_LOCK)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
-                    }
                     addAction(Action.RESET_UPSTREAM_CONNECTIONS)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -354,49 +390,127 @@ class BaseService {
                 }
                 data.closeReceiverRegistered = true
             }
+            if (!data.systemReceiverRegistered) {
+                val systemFilter = IntentFilter().apply {
+                    addAction(Intent.ACTION_SCREEN_ON)
+                    addAction(Intent.ACTION_USER_PRESENT)
+                    addAction(Intent.ACTION_SHUTDOWN)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        addAction(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED)
+                    }
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    registerReceiver(
+                        data.systemReceiver,
+                        systemFilter,
+                        null,
+                        null,
+                        Context.RECEIVER_EXPORTED
+                    )
+                } else {
+                    registerReceiver(
+                        data.systemReceiver,
+                        systemFilter,
+                        null,
+                        null
+                    )
+                }
+                data.systemReceiverRegistered = true
+            }
+
+            // With START_STICKY a restart after the system killed the
+            // process arrives with a null intent. Remember it so the user
+            // can be told the VPN was restored automatically.
+            val restoredAfterKill = intent == null
 
             data.changeState(State.Connecting)
-            runOnMainDispatcher {
-                try {
-                    data.notification = createNotification(ServiceNotification.genTitle(profile))
+            val startJob = runOnMainDispatcher {
+                data.lifecycleGuard.runStart {
+                    try {
+                        data.notification = createNotification(ServiceNotification.genTitle(profile))
 
-                    Executable.killAll()    // clean up old processes
-                    preInit()
-                    proxy.init()
-                    DataStore.currentProfile = profile.id
+                        Executable.killAll()    // clean up old processes
+                        preInit()
+                        proxy.init()
+                        DataStore.currentProfile = profile.id
 
-                    proxy.processes = GuardedProcessPool {
-                        Logs.w(it)
-                        stopRunner(false, it.readableMessage)
+                        proxy.processes = GuardedProcessPool {
+                            Logs.w(it)
+                            stopRunner(false, it.readableMessage)
+                        }
+
+                        startProcesses()
+                        data.changeState(State.Connected)
+
+                        if (restoredAfterKill) {
+                            postRestoredNotification(profile.displayName())
+                        }
+
+                        lateInit()
+                    } catch (_: CancellationException) { // if the job was cancelled, it is canceller's responsibility to call stopRunner
+                    } catch (_: UnknownHostException) {
+                        stopRunner(false, getString(R.string.invalid_server))
+                    } catch (e: PluginManager.PluginNotFoundException) {
+                        Toast.makeText(this@Interface, e.readableMessage, Toast.LENGTH_SHORT).show()
+                        Logs.w(e)
+                        data.binder.missingPlugin(e.plugin)
+                        stopRunner(false, null)
+                    } catch (exc: Throwable) {
+                        if (exc.javaClass.name.endsWith("proxyerror")) {
+                            // error from golang
+                            Logs.w(exc.readableMessage)
+                        } else {
+                            Logs.w(exc)
+                        }
+                        stopRunner(
+                            false, "${getString(R.string.service_failed)}: ${exc.readableMessage}"
+                        )
                     }
-
-                    startProcesses()
-                    data.changeState(State.Connected)
-
-                    lateInit()
-                } catch (_: CancellationException) { // if the job was cancelled, it is canceller's responsibility to call stopRunner
-                } catch (_: UnknownHostException) {
-                    stopRunner(false, getString(R.string.invalid_server))
-                } catch (e: PluginManager.PluginNotFoundException) {
-                    Toast.makeText(this@Interface, e.readableMessage, Toast.LENGTH_SHORT).show()
-                    Logs.w(e)
-                    data.binder.missingPlugin(e.plugin)
-                    stopRunner(false, null)
-                } catch (exc: Throwable) {
-                    if (exc.javaClass.name.endsWith("proxyerror")) {
-                        // error from golang
-                        Logs.w(exc.readableMessage)
-                    } else {
-                        Logs.w(exc)
-                    }
-                    stopRunner(
-                        false, "${getString(R.string.service_failed)}: ${exc.readableMessage}"
-                    )
-                } finally {
-                    data.connectingJob = null
                 }
             }
-            return Service.START_NOT_STICKY
+            // Register the launch job right away: a stop arriving before
+            // the start coroutine has entered runStart must still see it
+            // and cancel it, instead of letting the start run after the
+            // stop (see ServiceLifecycleGuard.noteStartJob).
+            data.lifecycleGuard.noteStartJob(startJob)
+            return Service.START_STICKY
+        }
+
+        /**
+         * Tells the user the VPN was restored automatically after the
+         * system killed the service process (C2). Best-effort: silently
+         * does nothing if notifications are not permitted.
+         */
+        fun postRestoredNotification(profileName: String) {
+            this as Context
+            try {
+                // The :bg process never runs SagerNet.updateNotificationChannels()
+                // (it only runs in the main process), so create the channel
+                // here: posting to a channel that does not exist yet silently
+                // drops the notification, which would defeat the whole
+                // point of this notice. Creating an existing channel is a
+                // no-op.
+                if (Build.VERSION.SDK_INT >= 26) {
+                    SagerNet.notification.createNotificationChannel(
+                        NotificationChannel(
+                            "service-restored",
+                            getString(R.string.service_restored_channel),
+                            NotificationManager.IMPORTANCE_DEFAULT
+                        )
+                    )
+                }
+                val nm = NotificationManagerCompat.from(this)
+                val notification = NotificationCompat.Builder(this, "service-restored")
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentText(getString(R.string.service_restored, profileName))
+                    .setSmallIcon(R.drawable.ic_service_active)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setContentIntent(SagerNet.configureIntent(this))
+                    .setAutoCancel(true)
+                nm.notify(3, notification.build())
+            } catch (e: Exception) {
+                Logs.w(e)
+            }
         }
     }
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task 10-4: inset so the selected pill sits inside the dock backplate instead of
+     filling the whole item cell and poking past its rounded corners. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="8dp"
+    android:insetRight="8dp"
+    android:insetTop="6dp"
+    android:insetBottom="6dp">
+    <shape android:shape="rectangle">
+        <corners android:radius="18dp" />
+        <solid android:color="@color/nkb_accent_soft" />
+    </shape>
+</inset>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">NekoBox</string>
-    <string name="app_name_long" translatable="false">NekoBox for Android</string>
+    <string name="app_name" translatable="false">KoNeko</string>
+    <string name="app_name_long" translatable="false">KoNeko for Android</string>
     <string name="app_desc">Універсальний набір інструментів проксі для Android, написаний на Kotlin.</string>
     <string name="project">Проєкт</string>
     <string name="github">Вихідний код</string>
@@ -19,7 +19,7 @@
     <string name="quick_toggle">Перемикач</string>
     <string name="quick_enable">Увімкнути</string>
     <string name="quick_disable">Вимкнути</string>
-    <string name="tile_title">Перемикач</string>
+    <string name="tile_title">KoNeko</string>
     <string name="menu_traffic">Трафік</string>
     <string name="menu_dashboard">Панель керування sing-box</string>
     <!-- externel -->
@@ -207,8 +207,6 @@
     <string name="action_shadowsocksr" translatable="false">ShadowsocksR</string>
     <string name="action_vmess" translatable="false">VMess</string>
     <string name="action_trojan" translatable="false">Trojan</string>
-    <string name="action_trojan_go" translatable="false">Trojan Go</string>
-    <string name="action_mieru" translatable="false">Mieru</string>
     <string name="action_naive" translatable="false">Naïve</string>
     <string name="action_anytls" translatable="false">AnyTLS</string>
     <string name="action_hysteria" translatable="false">Hysteria</string>
@@ -475,7 +473,6 @@
     <string name="domain_strategy_for_remote">Стратегія доменів для віддаленого</string>
     <string name="domain_strategy_for_direct">Стратегія доменів для прямого</string>
     <string name="domain_strategy_for_server">Стратегія доменів для адреси сервера</string>
-    <string name="show_bottom_bar">Показувати нижню панель, як у SagerNet</string>
     <string name="utls_fingerprint">Відбиток uTLS</string>
     <string name="custom_outbound_json">Власний JSON вихідного з\'єднання</string>
     <string name="custom_config_json">Власний JSON конфігурації</string>

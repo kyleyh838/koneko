@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same-name override of material-about-library's card layout
+     (com.github.daniel-stoneuk:material-about-library:3.2.0-rc01,
+     res/layout/mal_material_about_list_card.xml).
+     App resources win over library resources at build time, so the
+     two About page cards drawn by the library get the app card spec:
+     20dp corners, 16dp side margins, nkb_card background,
+     nkb_card_stroke outline. Keep the ids and inner structure the
+     library adapter binds to (mal_list_card, mal_list_card_title,
+     mal_card_recyclerview) exactly as they are.
+     Note: the adapter sets strokeWidth/elevation at bind time from
+     the card's outline flag (outline=true -> 1dp stroke, 0dp
+     elevation), so the AboutFragment cards use .outline(true). -->
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mal_list_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="16dp"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="8dp"
+    android:paddingBottom="16dp"
+    android:paddingEnd="8dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:paddingStart="8dp"
+    android:paddingTop="16dp"
+    app:cardBackgroundColor="@color/nkb_card"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/nkb_card_stroke"
+    app:strokeWidth="1dp"
+    >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/mal_list_card_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_marginBottom="8dp"
+            android:textAppearance="?attr/textAppearanceSubtitle2"
+            tools:text="Author" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/mal_card_recyclerview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="true"
+            android:paddingBottom="8dp"
+            android:paddingTop="8dp"/>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

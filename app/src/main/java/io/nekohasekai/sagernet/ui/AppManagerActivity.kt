@@ -93,7 +93,7 @@ class AppManagerActivity : ThemedActivity() {
 
         override fun onClick(v: View?) {
             if (isProxiedApp(item)) proxiedUids.delete(item.uid) else proxiedUids[item.uid] = true
-            DataStore.individual = apps.filter { isProxiedApp(it) }
+            currentList = apps.filter { isProxiedApp(it) }
                 .joinToString("\n") { it.packageName }
 
             appsAdapter.notifyItemRangeChanged(0, appsAdapter.itemCount, SWITCH)
@@ -165,7 +165,15 @@ class AppManagerActivity : ThemedActivity() {
     private var apps = emptyList<ProxiedApp>()
     private val appsAdapter = AppsAdapter()
 
-    private fun initProxiedUids(str: String = DataStore.individual) {
+    // The list being edited follows the current mode: proxy/bypass share
+    // `individual`, block uses its own `individualBlock` list.
+    private var currentList: String
+        get() = if (DataStore.appBlock) DataStore.individualBlock else DataStore.individual
+        set(value) {
+            if (DataStore.appBlock) DataStore.individualBlock = value else DataStore.individual = value
+        }
+
+    private fun initProxiedUids(str: String = currentList) {
         proxiedUids.clear()
         val apps = cachedApps
         for (line in str.lineSequence()) {
@@ -219,7 +227,13 @@ class AppManagerActivity : ThemedActivity() {
             DataStore.proxyApps = true
         }
 
-        binding.bypassGroup.check(if (DataStore.bypass) R.id.appProxyModeBypass else R.id.appProxyModeOn)
+        binding.bypassGroup.check(
+            when {
+                DataStore.appBlock -> R.id.appProxyModeBlock
+                DataStore.bypass -> R.id.appProxyModeBypass
+                else -> R.id.appProxyModeOn
+            }
+        )
         binding.bypassGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.appProxyModeDisable -> {
@@ -227,11 +241,26 @@ class AppManagerActivity : ThemedActivity() {
                     finish()
                 }
 
-                R.id.appProxyModeOn -> DataStore.bypass = false
-                R.id.appProxyModeBypass -> DataStore.bypass = true
+                R.id.appProxyModeOn -> {
+                    DataStore.appBlock = false
+                    DataStore.bypass = false
+                    reloadListForMode()
+                }
+
+                R.id.appProxyModeBypass -> {
+                    DataStore.appBlock = false
+                    DataStore.bypass = true
+                    reloadListForMode()
+                }
+
+                R.id.appProxyModeBlock -> {
+                    DataStore.appBlock = true
+                    reloadListForMode()
+                }
             }
         }
         binding.autoSelectProxyApps.setOnClickListener { selectProxyApp() }
+        binding.autoSelectProxyApps.isEnabled = !DataStore.appBlock
 
         initProxiedUids()
         binding.list.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
@@ -254,6 +283,14 @@ class AppManagerActivity : ThemedActivity() {
         loadApps()
     }
 
+    // Rebuild the checked set from the list of the newly selected mode.
+    private fun reloadListForMode() {
+        initProxiedUids(currentList)
+        apps = apps.sortedWith(compareBy({ !isProxiedApp(it) }, { it.name.toString() }))
+        binding.autoSelectProxyApps.isEnabled = !DataStore.appBlock
+        appsAdapter.filter.filter(binding.search.text?.toString() ?: "")
+    }
+
     private var sysApps = true
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -273,7 +310,7 @@ class AppManagerActivity : ThemedActivity() {
                             proxiedUids[app.uid] = true
                         }
                     }
-                    DataStore.individual = apps.filter { isProxiedApp(it) }
+                    currentList = apps.filter { isProxiedApp(it) }
                         .joinToString("\n") { it.packageName }
                     apps = apps.sortedWith(compareBy({ !isProxiedApp(it) }, { it.name.toString() }))
                     onMainDispatcher {
@@ -287,7 +324,7 @@ class AppManagerActivity : ThemedActivity() {
             R.id.action_clear_selections -> {
                 runOnDefaultDispatcher {
                     proxiedUids.clear()
-                    DataStore.individual = ""
+                    currentList = ""
                     apps = apps.sortedWith(compareBy({ !isProxiedApp(it) }, { it.name.toString() }))
                     onMainDispatcher {
                         appsAdapter.filter.filter(binding.search.text?.toString() ?: "")
@@ -296,8 +333,9 @@ class AppManagerActivity : ThemedActivity() {
             }
 
             R.id.action_export_clipboard -> {
+                val mode = if (DataStore.appBlock) "block" else DataStore.bypass.toString()
                 val success =
-                    SagerNet.trySetPrimaryClip("${DataStore.bypass}\n${DataStore.individual}")
+                    SagerNet.trySetPrimaryClip("$mode\n${DataStore.individual}\n${DataStore.individualBlock}")
                 Snackbar.make(
                     binding.list,
                     if (success) R.string.action_export_msg else R.string.action_export_err,
@@ -310,19 +348,27 @@ class AppManagerActivity : ThemedActivity() {
                 val proxiedAppString =
                     SagerNet.clipboard.primaryClip?.getItemAt(0)?.text?.toString()
                 if (!proxiedAppString.isNullOrEmpty()) {
-                    val i = proxiedAppString.indexOf('\n')
                     try {
-                        val (enabled, apps) = if (i < 0) {
-                            proxiedAppString to ""
-                        } else proxiedAppString.substring(
-                            0, i
-                        ) to proxiedAppString.substring(i + 1)
-                        binding.bypassGroup.check(if (enabled.toBoolean()) R.id.appProxyModeBypass else R.id.appProxyModeOn)
-                        DataStore.individual = apps
+                        val lines = proxiedAppString.split("\n")
+                        when (lines.getOrNull(0)) {
+                            "block" -> {
+                                DataStore.appBlock = true
+                                DataStore.bypass = false
+                                binding.bypassGroup.check(R.id.appProxyModeBlock)
+                            }
+
+                            else -> {
+                                DataStore.appBlock = false
+                                DataStore.bypass = lines.getOrNull(0).toBoolean()
+                                binding.bypassGroup.check(if (DataStore.bypass) R.id.appProxyModeBypass else R.id.appProxyModeOn)
+                            }
+                        }
+                        DataStore.individual = lines.getOrNull(1) ?: ""
+                        lines.getOrNull(2)?.let { DataStore.individualBlock = it }
                         Snackbar.make(
                             binding.list, R.string.action_import_msg, Snackbar.LENGTH_LONG
                         ).show()
-                        initProxiedUids(apps)
+                        initProxiedUids(currentList)
                         appsAdapter.notifyItemRangeChanged(0, appsAdapter.itemCount, SWITCH)
                         return true
                     } catch (_: IllegalArgumentException) {

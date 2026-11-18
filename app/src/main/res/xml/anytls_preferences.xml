@@ -21,6 +21,24 @@
             app:icon="@drawable/ic_settings_password"
             app:key="password"
             app:title="@string/password" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_refresh_24"
+            app:key="idleSessionCheckInterval"
+            app:summary="@string/anytls_idle_session_check_interval_sum"
+            app:title="@string/anytls_idle_session_check_interval"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_refresh_24"
+            app:key="idleSessionTimeout"
+            app:summary="@string/anytls_idle_session_timeout_sum"
+            app:title="@string/anytls_idle_session_timeout"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_legend_toggle_24"
+            app:key="minIdleSession"
+            app:summary="@string/anytls_min_idle_session_sum"
+            app:title="@string/anytls_min_idle_session"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/security_settings">

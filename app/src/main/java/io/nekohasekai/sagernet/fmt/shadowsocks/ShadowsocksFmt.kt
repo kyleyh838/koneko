@@ -1,5 +1,6 @@
 package io.nekohasekai.sagernet.fmt.shadowsocks
 
+import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.ktx.*
 import moe.matsuri.nb4a.SingBoxOptions
 import moe.matsuri.nb4a.utils.Util
@@ -37,6 +38,7 @@ fun parseShadowsocks(url: String): ShadowsocksBean {
                 password = link.password
                 plugin = link.queryParameter("plugin") ?: ""
                 name = link.fragment
+                sUoT = DataStore.ssDefaultUoT
                 fixPluginName()
             }
         }
@@ -50,6 +52,7 @@ fun parseShadowsocks(url: String): ShadowsocksBean {
             password = methodAndPswd.substringAfter(":")
             plugin = link.queryParameter("plugin") ?: ""
             name = link.fragment
+            sUoT = DataStore.ssDefaultUoT
             fixPluginName()
         }
     } else {
@@ -69,6 +72,7 @@ fun parseShadowsocks(url: String): ShadowsocksBean {
             plugin = ""
             val remarks = url.substringAfter("#").unUrlSafe()
             if (remarks.isNotBlank()) name = remarks
+            sUoT = DataStore.ssDefaultUoT
         }
     }
 
@@ -99,6 +103,7 @@ fun JSONObject.parseShadowsocks(): ShadowsocksBean {
         password = getStr("password")
         method = getStr("method")
         name = optString("remarks", "")
+        sUoT = DataStore.ssDefaultUoT
 
         val pId = getStr("plugin")
         if (!pId.isNullOrBlank()) {

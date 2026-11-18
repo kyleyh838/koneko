@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">NekoBox</string>
-    <string name="app_name_long" translatable="false">NekoBox for Android</string>
-    <string name="app_desc">The universal proxy toolchain for Android, written in Kotlin.</string>
+    <string name="app_name" translatable="false">KoNeko</string>
+    <string name="app_name_long" translatable="false">KoNeko for Android</string>
+    <string name="app_desc">Based on a modified version of NekoBox, a universal proxy tool for Android using sing-box.</string>
     <string name="project">Project</string>
     <string name="github">Source code</string>
     <string name="telegram">Telegram update channel</string>
@@ -11,15 +11,18 @@
     <string name="version_x">Version (%s)</string>
     <string name="logcat">Export debug information</string>
     <string name="menu_configuration">Configuration</string>
+    <string name="dock_home">Home</string>
+    <string name="dock_group">Groups</string>
     <string name="menu_group">Group</string>
     <string name="menu_about">About</string>
-    <string name="theme">Theme</string>
+    <string name="more">More</string>
+    <string name="dark_mode">Dark mode</string>
     <string name="document">Document</string>
     <string name="group_default">Ungrouped</string>
     <string name="quick_toggle">Toggle</string>
     <string name="quick_enable">Enable</string>
     <string name="quick_disable">Disable</string>
-    <string name="tile_title">Switcher</string>
+    <string name="tile_title">KoNeko</string>
     <string name="menu_traffic">Traffic</string>
     <string name="menu_dashboard">sing-box Dashboard</string>
     <!-- externel -->
@@ -52,6 +55,7 @@
     <string name="service_mode">Service Mode</string>
     <string name="service_mode_proxy">Proxy only</string>
     <string name="service_mode_vpn" translatable="false">VPN</string>
+    <string name="always_on_vpn">Always-on VPN</string>
     <string name="port_proxy">Proxy Port</string>
     <string name="port_http">HTTP Proxy Port</string>
     <string name="port_transproxy">Transproxy Port</string>
@@ -99,6 +103,10 @@
     <string name="require_transproxy">Enable Transproxy Inbound</string>
     <string name="transproxy_mode">Transproxy Mode</string>
     <string name="connection_test_url">Connection Test URL</string>
+    <string name="ss_default_uot">Default UoT for imported Shadowsocks</string>
+    <string name="ss_default_uot_sum">Turn on UDP over TCP when importing Shadowsocks nodes</string>
+    <string name="url_test_timeout">URL test timeout (ms)</string>
+    <string name="url_test_timeout_sum">Timeout for URL tests in milliseconds (default 5000)</string>
     <!-- proxy category -->
     <string name="profile_name">Profile Name</string>
     <string name="server_address">Server</string>
@@ -190,6 +198,8 @@
     <!-- notification category -->
     <string name="service_vpn">VPN Service</string>
     <string name="service_proxy">Proxy Service</string>
+    <string name="service_restored">VPN auto-restored: %s</string>
+    <string name="service_restored_channel">VPN auto-restore</string>
     <string name="forward_success">Proxy started.</string>
     <string name="invalid_server">Invalid server name</string>
     <string name="service_failed">Failed: </string>
@@ -215,14 +225,50 @@
     <string name="action_shadowsocksr" translatable="false">ShadowsocksR</string>
     <string name="action_vmess" translatable="false">VMess</string>
     <string name="action_trojan" translatable="false">Trojan</string>
-    <string name="action_trojan_go" translatable="false">Trojan Go</string>
-    <string name="action_mieru" translatable="false">Mieru</string>
     <string name="action_naive" translatable="false">Naïve</string>
     <string name="action_anytls" translatable="false">AnyTLS</string>
     <string name="action_hysteria" translatable="false">Hysteria</string>
     <string name="action_ssh" translatable="false">SSH</string>
     <string name="action_wireguard" translatable="false">WireGuard</string>
     <string name="action_tuic" translatable="false">TUIC</string>
+    <string name="action_snell" translatable="false">Snell</string>
+    <string name="action_openvpn" translatable="false">OpenVPN</string>
+    <string name="action_openconnect" translatable="false">OpenConnect</string>
+    <string name="snell_psk">PSK</string>
+    <string name="snell_userkey">User Key</string>
+    <string name="snell_version">Version</string>
+    <string name="snell_obfs_mode">Obfs Mode</string>
+    <string name="snell_obfs_host">Obfs Host</string>
+    <string name="snell_v6_mode">Mode</string>
+    <string name="snell_reuse">Reuse Connection</string>
+    <string name="openvpn_mode">Mode</string>
+    <string name="openvpn_address">Local Address</string>
+    <string name="openvpn_cipher">Cipher</string>
+    <string name="openvpn_data_ciphers">Data Ciphers</string>
+    <string name="openvpn_auth">Auth</string>
+    <string name="openvpn_client_cert">Client Certificate</string>
+    <string name="openvpn_client_key">Client Key</string>
+    <string name="openvpn_peer_fingerprint">Peer Fingerprint</string>
+    <string name="openvpn_control_wrap">Control Wrap</string>
+    <string name="openvpn_control_wrap_key">Control Wrap Key</string>
+    <string name="openvpn_control_wrap_direction">Control Wrap Direction</string>
+    <string name="openvpn_static_key">Static Key</string>
+    <string name="openvpn_key_direction">Key Direction</string>
+    <string name="openvpn_remote_random">Remote Random</string>
+    <string name="openvpn_route_no_pull">Don\'t Pull Routes</string>
+    <string name="openvpn_redirect_gateway">Redirect Gateway</string>
+    <string name="openconnect_flavor">Flavor</string>
+    <string name="openconnect_auth_group">Auth Group</string>
+    <string name="openconnect_cookie">Cookie</string>
+    <string name="openconnect_token_mode">Token Mode</string>
+    <string name="openconnect_token_secret">Token Secret</string>
+    <string name="openconnect_token_pin">Token PIN</string>
+    <string name="openconnect_reported_os">Reported OS</string>
+    <string name="openconnect_user_agent">User Agent</string>
+    <string name="openconnect_local_hostname">Local Hostname</string>
+    <string name="openconnect_no_udp">Disable UDP</string>
+    <string name="openconnect_client_cert">Client Certificate</string>
+    <string name="openconnect_client_key">Client Key</string>
     <string name="proxy_chain">Proxy Chain</string>
     <string name="custom_config">Custom Config</string>
     <string name="balancer">Balancer</string>
@@ -240,6 +286,8 @@
     <string name="action_export_file">Export to file</string>
     <string name="action_export_clipboard">Export to Clipboard</string>
     <string name="action_export">Export</string>
+    <string name="action_export_backup">Export backup</string>
+    <string name="action_share_backup">Share backup</string>
     <string name="action_import">Import from Clipboard</string>
     <string name="action_import_file">Import from file</string>
     <string name="action_export_msg">Successfully export!</string>
@@ -270,7 +318,7 @@
     <!-- tasker -->
     <!-- status -->
     <string name="connecting">Connecting…</string>
-    <string name="vpn_connected">Connected, tap to check connection</string>
+    <string name="vpn_connected">Connected</string>
     <string name="not_connected">Not connected</string>
     <!-- subscriptions -->
     <string name="subscriptions">Subscriptions</string>
@@ -304,7 +352,6 @@
     <string name="route_warn">Make sure you have read the documentation before adding custom rules,
         otherwise you may not be able to connect to the Internet.</string>
     <string name="lines">%d Lines</string>
-    <string name="night_mode">Night Mode</string>
     <string name="follow_system">Follow System</string>
     <string name="enable">Enable</string>
     <string name="disable">Disable</string>
@@ -328,6 +375,11 @@
     <string name="connection_test_clear_results">Clear test results</string>
     <string name="connection_test_tcp_ping" translatable="false">TCPing</string>
     <string name="connection_test_tcp_ping_unavailable">TCPing unavailable</string>
+    <string name="connection_test_tcp_ping_unsupported">TCPing not supported</string>
+    <string name="connection_test_icmp_ping_unsupported">ICMPing not supported</string>
+    <string name="connection_test_no_testable_nodes_tcp">No nodes in this group support TCPing</string>
+    <string name="connection_test_no_testable_nodes_icmp">No nodes in this group support ICMPing</string>
+    <string name="connection_test_empty_group">This group has no nodes</string>
     <string name="connection_test_icmp_ping" translatable="false">ICMPing</string>
     <string name="connection_test_icmp_ping_unavailable">ICMPing unavailable</string>
     <string name="connection_test_url_test" translatable="false">URL Test</string>
@@ -451,6 +503,16 @@
     <string name="wireguard_local_address">Local Address</string>
     <string name="wireguard_public_key">Peer Public Key</string>
     <string name="wireguard_psk">Peer Pre-Shared Key</string>
+    <string name="wireguard_persistent_keepalive">Persistent keepalive</string>
+    <string name="wireguard_persistent_keepalive_sum">Interval in seconds, 0 disables it</string>
+    <string name="anytls_idle_session_check_interval">Idle session check interval (s)</string>
+    <string name="anytls_idle_session_check_interval_sum">e.g. 15s, empty to unset</string>
+    <string name="anytls_idle_session_timeout">Idle session timeout (s)</string>
+    <string name="anytls_idle_session_timeout_sum">e.g. 30s, empty to unset</string>
+    <string name="anytls_min_idle_session">Min idle sessions</string>
+    <string name="anytls_min_idle_session_sum">0 to unset</string>
+    <string name="shadowsocks_enable_mux">Multiplex</string>
+    <string name="shadowsocks_enable_mux_sum">Multiplex multiple streams over one connection</string>
 
     <string name="cloudflare_wrap" translatable="false">Cloudflare Warp</string>
     <string name="warp_license">CloudFlare Warp is a free WireGuard VPN provider. By using it, you
@@ -484,6 +546,7 @@
     <string name="mtu" translatable="false">MTU</string>
 
     <string name="backup">Backup</string>
+    <string name="backup_content">Backup content</string>
     <string name="backup_groups_and_configurations">Groups and configurations</string>
     <string name="backup_rules">Routing rules</string>
     <string name="backup_settings">Settings</string>
@@ -519,7 +582,6 @@
     <string name="domain_strategy_for_remote">Domain strategy for Remote</string>
     <string name="domain_strategy_for_direct">Domain strategy for Direct</string>
     <string name="domain_strategy_for_server">Domain strategy for Server address</string>
-    <string name="show_bottom_bar">Show bottom bar like SagerNet</string>
     <string name="utls_fingerprint">uTLS fingerprint</string>
     <string name="custom_outbound_json">Custom outbound JSON</string>
     <string name="custom_config_json">Custom config JSON</string>
@@ -569,8 +631,7 @@
     <string name="network_change_reset_connections">Reset outbound connections when network changes</string>
     <string name="wake_reset_connections">Reset outbound connections when device wake from sleep</string>
     <string name="preview_version_hint">This application is a preview version and may contain many problems. If you do not want to test it, please go to GitHub to download the Release version!</string>
-    <string name="check_update_preview">Check for preview version updates</string>
-    <string name="check_update_release">Check for release version updates</string>
+    <string name="check_update_release">Check for updates</string>
     <string name="update_dialog_title">New version available</string>
     <string name="update_dialog_message">Current version: %1$s\nAvailable version: %2$s\nDo you want to download it?</string>
     <string name="check_update_no">Check successful, but no updates.</string>
