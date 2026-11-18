@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.gradle
-          key: gradle-oss-${{ hashFiles('**/*.gradle.kts') }}
+          key: gradle-oss-v2-${{ hashFiles('**/*.gradle.kts') }}
       - name: Check Signing Secrets
         run: |
           test -n "${{ secrets.LOCAL_PROPERTIES }}" || { echo "LOCAL_PROPERTIES secret is missing; add it in the repo settings or the APK will be unsigned."; exit 1; }
@@ -137,7 +137,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.gradle
-          key: gradle-play-${{ hashFiles('**/*.gradle.kts') }}
+          key: gradle-play-v2-${{ hashFiles('**/*.gradle.kts') }}
       - name: Checkout Library
         run: |
           git submodule update --init 'app/*'
