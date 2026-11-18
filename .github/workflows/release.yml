@@ -26,6 +26,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.27.1'
+      - name: Install NDK 28
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;28.2.13676358"
       - name: Native Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: ./run lib core
