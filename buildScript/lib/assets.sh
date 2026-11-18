@@ -8,7 +8,12 @@ mkdir -p $DIR
 cd $DIR
 
 get_latest_release() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+  # Unauthenticated api.github.com calls share a 60/hr per-IP limit on
+  # Actions runners and often return empty; use the workflow token when
+  # available (5000/hr) so the tag lookup does not silently come back empty.
+  local auth=()
+  [ -n "$GITHUB_TOKEN" ] && auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+  curl --silent --retry 3 "${auth[@]}" "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
     grep '"tag_name":' |                                            # Get tag line
     sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
