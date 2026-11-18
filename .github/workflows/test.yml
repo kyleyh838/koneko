@@ -16,7 +16,7 @@ jobs:
         with:
           path: |
             app/libs/libcore.aar
-          key: libcore-${{ hashFiles('.github/workflows/*', 'golang_status', 'libcore_status') }}
+          key: libcore-${{ hashFiles('golang_status', 'libcore_status') }}
           restore-keys: |
             libcore-
       - name: Check LibCore Cache
