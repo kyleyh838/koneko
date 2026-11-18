@@ -123,7 +123,10 @@ class KoNekoRenameTest {
         val readme = File("../README.md").readText()
         assertTrue(readme.startsWith("# KoNeko for Android"))
         assertTrue(readme.contains("github.com/kyleyh838/koneko"))
-        assertFalse(readme.contains("MatsuriDayo/NekoBoxForAndroid"))
+        // Upstream attribution is intentional: exactly one line in the intro.
+        // The string appears twice in that line (link text + URL).
+        assertTrue(readme.contains("基于 [MatsuriDayo/NekoBoxForAndroid](https://github.com/MatsuriDayo/NekoBoxForAndroid) 修改。"))
+        assertEquals(2, readme.split("MatsuriDayo/NekoBoxForAndroid").size - 1)
         assertFalse(readme.contains("t.me/"))
         assertFalse("docs homepage link remains", readme.contains("https://matsuridayo.github.io\n"))
     }
