@@ -8,6 +8,8 @@ sing-box / universal proxy toolchain for Android.
 
 一款使用 sing-box 的 Android 通用代理软件.
 
+基于 [MatsuriDayo/NekoBoxForAndroid](https://github.com/MatsuriDayo/NekoBoxForAndroid) 修改。
+
 ## 下载 / Downloads
 
 [![GitHub All Releases](https://img.shields.io/github/downloads/kyleyh838/koneko/total?label=downloads-total&logo=github&style=flat-square)](https://github.com/kyleyh838/koneko/releases)
@@ -41,12 +43,10 @@ https://github.com/kyleyh838/koneko
 * TUIC
 * Hysteria 1/2
 * WireGuard
-* NaïveProxy (naive-plugin)
-
-请到[这里](https://matsuridayo.github.io/nb4a-plugin/)下载插件以获得完整的代理支持.
-
-Please visit [here](https://matsuridayo.github.io/nb4a-plugin/) to download plugins for full proxy
-supports.
+* NaïveProxy
+* Snell
+* OpenVPN
+* OpenConnect
 
 ## 支持的订阅格式 / Supported Subscription Format
 
@@ -59,29 +59,6 @@ supports.
 * sing-box outbound
 
 Only resolving outbound, i.e. nodes, is supported. Information such as diversion rules are ignored.
-
-## 捐助 / Donate
-
-<details>
-
-如果这个项目对您有帮助, 可以通过捐赠的方式帮助我们维持这个项目.
-
-捐赠满等额 50 USD 可以在「[捐赠榜](https://mtrdnt.pages.dev/donation_list)」显示头像, 如果您未被添加到这里,
-欢迎联系我们补充.
-
-Donations of 50 USD or more can display your avatar on
-the [Donation List](https://mtrdnt.pages.dev/donation_list). If you are not added here, please
-contact us to add it.
-
-USDT TRC20
-
-`TRhnA7SXE5Sap5gSG3ijxRmdYFiD4KRhPs`
-
-XMR
-
-`49bwESYQjoRL3xmvTcjZKHEKaiGywjLYVQJMUv79bXonGiyDCs8AzE3KiGW2ytTybBCpWJUvov8SjZZEGg66a4e59GXa6k5`
-
-</details>
 
 ## Credits
 
