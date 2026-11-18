@@ -62,6 +62,9 @@ jobs:
           test -n "${{ secrets.KEYSTORE_BASE64 }}" || { echo "KEYSTORE_BASE64 secret is missing; add it in the repo settings or the APK will be unsigned."; exit 1; }
       - name: Restore Keystore
         run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+      - name: Install NDK 25
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;25.0.8775105"
       - name: Gradle Build
         env:
           BUILD_PLUGIN: none
@@ -136,6 +139,9 @@ jobs:
           test -n "${{ secrets.KEYSTORE_BASE64 }}" || { echo "KEYSTORE_BASE64 secret is missing; add it in the repo settings or the APK will be unsigned."; exit 1; }
       - name: Restore Keystore
         run: printf '%s' "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+      - name: Install NDK 25
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "ndk;25.0.8775105"
       - name: Gradle Build
         env:
           nkmr_minify: '0'
