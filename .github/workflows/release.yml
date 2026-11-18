@@ -87,7 +87,7 @@ jobs:
         run: |
           APKSIGNER=$(find "${ANDROID_HOME}/build-tools" -maxdepth 2 -name apksigner -type f | head -1)
           test -n "$APKSIGNER" || { echo "apksigner not found under ${ANDROID_HOME}/build-tools"; exit 1; }
-          "$APKSIGNER" verify "${{ env.APK }}"/*.apk
+          for apk in "${{ env.APK }}"/*.apk; do "$APKSIGNER" verify "$apk"; done
       - uses: actions/upload-artifact@v4
         with:
           name: APKs
